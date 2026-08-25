@@ -24,9 +24,12 @@ export function SummaryItem({
             : "flex items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         }
       >
+        {/* Show the category, history item, or tag name */}
         <span>{name}</span>
 
+        {/* The Playwright test looks for this exact test id */}
         <span
+          data-test-id="post-count"
           className={
             isSelected
               ? "rounded-full bg-white/20 px-2 py-0.5 text-xs dark:bg-gray-900/10"

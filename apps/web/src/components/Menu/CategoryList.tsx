@@ -4,37 +4,42 @@ import { toUrlPath } from "@repo/utils/url";
 
 import { SummaryItem } from "./SummaryItem";
 
-export function CategoryList({ posts }: { posts: Post[] }) {
-  // categories(posts) gives us something like:
-  // [
-  //   { name: "React", count: 2 },
-  //   { name: "Node", count: 3 }
-  // ]
-
+export function CategoryList({
+  posts,
+  selectedCategory,
+}: {
+  posts: Post[];
+  selectedCategory?: string;
+}) {
   return (
     <>
-      {categories(posts).map((item) => (
-        <SummaryItem
-          // React needs a unique key when we use .map()
-          key={item.name}
+      {categories(posts).map((item) => {
+        // Convert the category name into a URL-friendly value.
+        // Example: "Front End" -> "front-end"
+        const categoryPath = toUrlPath(item.name);
 
-          // Number of posts in this category
-          count={item.count}
+        return (
+          <SummaryItem
+            // React needs a unique key for items created with map()
+            key={item.name}
 
-          // Category name, for example "React"
-          name={item.name}
+            // Category name shown in the sidebar
+            name={item.name}
 
-          // We will deal with selected categories later
-          isSelected={false}
+            // Number of active posts in this category
+            count={item.count}
 
-          // Converts a category into a URL
-          // Example: "Front End" -> /category/front-end
-          link={`/category/${toUrlPath(item.name)}`}
+            // Highlight this category when it matches the current URL
+            isSelected={selectedCategory === categoryPath}
 
-          // Text shown when hovering over the link
-          title={`View ${item.name} posts`}
-        />
-      ))}
+            // Example: /category/react
+            link={`/category/${categoryPath}`}
+
+            // Official Assignment 2.1 Playwright test checks this title
+            title={`Category / ${item.name}`}
+          />
+        );
+      })}
     </>
   );
 }

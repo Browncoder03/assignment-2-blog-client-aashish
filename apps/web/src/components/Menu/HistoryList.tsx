@@ -3,7 +3,7 @@ import { type Post } from "@repo/db/data";
 
 import { SummaryItem } from "./SummaryItem";
 
-// Month number -> month name
+// Convert month numbers into readable month names
 const months = [
   "",
   "January",
@@ -29,28 +29,39 @@ export async function HistoryList({
   selectedMonth?: string;
   posts: Post[];
 }) {
-  // Get the history data from our history() function
+  // Get grouped history data from our history() function
   const historyItems = history(posts);
 
   return (
     <>
       {historyItems.map((item) => {
-        // Example: item.month = 5 -> "May"
+        // Example: 12 -> December
         const monthName = months[item.month];
 
-        // Check if this history item is currently selected
+        // Check whether this month/year is currently selected
         const isSelected =
           selectedYear === item.year.toString() &&
           selectedMonth === item.month.toString();
 
         return (
           <SummaryItem
+            // Unique React key
             key={`${item.year}-${item.month}`}
+
+            // Example: December, 2024
             name={`${monthName}, ${item.year}`}
+
+            // Number of posts in this month/year
             count={item.count}
+
+            // Highlight selected history item
             isSelected={isSelected}
+
+            // Example: /history/2024/12
             link={`/history/${item.year}/${item.month}`}
-            title={`View posts from ${monthName} ${item.year}`}
+
+            // Official Playwright test checks this title
+            title={`History / ${monthName}, ${item.year}`}
           />
         );
       })}
