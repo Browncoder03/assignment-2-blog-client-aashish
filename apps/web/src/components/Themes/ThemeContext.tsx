@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type PropsWithChildren,
+} from "react";
 
 export type Theme = "light" | "dark";
 
@@ -9,9 +15,51 @@ interface ThemeContextProps {
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextProps | undefined>(
+  undefined,
+);
 
-// TODOS:
-// 1. Create Theme Provider
-// 2. Create useTheme hook
-// 3. Use the provider in your layout
+export function ThemeProvider({
+  children,
+}: PropsWithChildren) {
+  const [theme, setTheme] = useState<Theme>("light");
+
+  // Apply the selected theme to the <html> element
+  useEffect(() => {
+    document.documentElement.setAttribute(
+      "data-theme",
+      theme,
+    );
+  }, [theme]);
+
+  // Switch between light and dark
+  function toggleTheme() {
+    setTheme((currentTheme) =>
+      currentTheme === "light" ? "dark" : "light",
+    );
+  }
+
+  return (
+    <ThemeContext.Provider
+      value={{
+        theme,
+        toggleTheme,
+      }}
+    >
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// Custom hook so other components can use the theme
+export function useTheme() {
+  const context = useContext(ThemeContext);
+
+  if (!context) {
+    throw new Error(
+      "useTheme must be used inside ThemeProvider",
+    );
+  }
+
+  return context;
+}

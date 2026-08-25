@@ -2,11 +2,18 @@
 
 import { Button } from "@repo/ui/button";
 
+import { useTheme } from "./ThemeContext";
+
 const ThemeSwitch = () => {
-  const theme = "light"; // <- TODO: Get the theme from the context
+  // Get the current theme and toggle function
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <Button>{theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}</Button>
+    <Button onClick={toggleTheme}>
+      {theme === "light"
+        ? "🌙 Dark Mode"
+        : "☀️ Light Mode"}
+    </Button>
   );
 };
 
