@@ -1,55 +1,163 @@
 "use server";
 
+import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// Assignment 2 uses a hard-coded password.
-// We are not using database authentication or JWT.
-const ADMIN_PASSWORD = "123";
+import { client } from "@repo/db/client";
+import { env } from "@repo/env/admin";
+import { toUrlPath } from "@repo/utils/url";
+
+// ---------------------------------------------------------
+// ASSIGNMENT 2.3 - LOGIN WITH JWT
+// ---------------------------------------------------------
 
 export async function login(formData: FormData) {
-  // Get the password entered into the login form.
   const password = formData.get("password");
 
-  // Only allow the Assignment 2 hard-coded password.
-  if (password !== ADMIN_PASSWORD) {
-    // For now simply return to the login page.
-    // Later we can add a visible validation message if a test requires it.
+  // Password is checked only on the server.
+  if (password !== env.PASSWORD) {
     redirect("/");
   }
 
+  // Create the same kind of JWT used by /api/auth.
+  const token = jwt.sign(
+    {
+      role: "admin",
+    },
+    env.JWT_SECRET,
+    {
+      expiresIn: "1d",
+    },
+  );
+
   const userCookies = await cookies();
 
-  // Create the cookie required by Assignment 2.
-  userCookies.set("auth_token", "logged-in", {
-    // JavaScript running in the browser cannot access this cookie.
+  userCookies.set("auth_token", token, {
     httpOnly: true,
-
-    // Cookie is available throughout the admin application.
     path: "/",
-
-    // Suitable for local development and normal navigation.
     sameSite: "lax",
-
-    // localhost uses HTTP during development,
-    // therefore secure must remain false here.
     secure: false,
   });
 
-  // Reload the home page after successful login.
   redirect("/");
 }
+
+// ---------------------------------------------------------
+// LOGOUT
+// ---------------------------------------------------------
 
 export async function logout() {
   const userCookies = await cookies();
 
-  // Remove the normal Assignment 2 authentication cookie.
   userCookies.delete("auth_token");
 
-  // The official Playwright userPage fixture may contain
-  // this starter authentication cookie as well.
+  // Keep this for the old Assignment 2 E2E fixture.
   userCookies.delete("password");
 
-  // Return to the login screen.
   redirect("/");
+}
+
+// ---------------------------------------------------------
+// TOGGLE ACTIVE / INACTIVE
+// ---------------------------------------------------------
+
+export async function togglePostActive(postId: number) {
+  const post = await client.db.post.findUnique({
+    where: {
+      id: postId,
+    },
+  });
+
+  if (!post) {
+    return;
+  }
+
+  await client.db.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      active: !post.active,
+    },
+  });
+
+  revalidatePath("/");
+}
+
+// ---------------------------------------------------------
+// UPDATE POST
+// ---------------------------------------------------------
+
+export async function updatePost(
+  postId: number,
+  data: {
+    title: string;
+    category: string;
+    description: string;
+    content: string;
+    imageUrl: string;
+    tags: string;
+  },
+) {
+  await client.db.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      title: data.title,
+      category: data.category,
+      description: data.description,
+      content: data.content,
+      imageUrl: data.imageUrl,
+
+      tags: data.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
+        .join(","),
+    },
+  });
+
+  revalidatePath("/");
+}
+
+// ---------------------------------------------------------
+// CREATE POST
+// ---------------------------------------------------------
+
+export async function createPost(data: {
+  title: string;
+  category: string;
+  description: string;
+  content: string;
+  imageUrl: string;
+  tags: string;
+}) {
+  const urlId = toUrlPath(data.title);
+
+  await client.db.post.create({
+    data: {
+      title: data.title,
+      category: data.category,
+      description: data.description,
+      content: data.content,
+      imageUrl: data.imageUrl,
+
+      tags: data.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
+        .join(","),
+
+      urlId,
+      active: true,
+      views: 0,
+    },
+  });
+
+  revalidatePath("/");
+
+  return urlId;
 }

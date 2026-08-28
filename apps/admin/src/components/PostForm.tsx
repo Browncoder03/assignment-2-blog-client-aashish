@@ -1,7 +1,9 @@
 "use client";
 
 import type { Post } from "@repo/db/data";
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
+
+import { createPost, updatePost } from "../app/actions";
 
 type PostFormProps = {
   post?: Post;
@@ -15,13 +17,15 @@ type FormErrors = {
   tags?: string;
 };
 
-// Small Markdown renderer for Assignment 2 preview.
+// ---------------------------------------------------------
+// SMALL MARKDOWN PREVIEW
+// ---------------------------------------------------------
 //
-// The supplied post content uses Markdown such as:
-// **sint voluptas**
+// Assignment 2 tests use simple Markdown such as:
 //
-// This converts that into:
-// <strong>sint voluptas</strong>
+// **some bold text**
+//
+// This converts it into HTML for the preview.
 function renderMarkdown(markdown: string) {
   return markdown
     .replace(/&/g, "&amp;")
@@ -32,49 +36,69 @@ function renderMarkdown(markdown: string) {
 }
 
 export function PostForm({ post }: PostFormProps) {
-  // If a post is supplied, this is the update screen.
-  // Otherwise, it is the create screen.
+  // If post exists:
+  // UPDATE screen.
+  //
+  // If post does not exist:
+  // CREATE screen.
+
   const [title, setTitle] = useState(post?.title ?? "");
-  const [category, setCategory] = useState(post?.category ?? "");
+  const [category, setCategory] = useState(
+    post?.category ?? "",
+  );
+
   const [description, setDescription] = useState(
     post?.description ?? "",
   );
-  const [content, setContent] = useState(post?.content ?? "");
-  const [tags, setTags] = useState(post?.tags ?? "");
-  const [imageUrl, setImageUrl] = useState(post?.imageUrl ?? "");
 
-  // Store validation errors here.
+  const [content, setContent] = useState(
+    post?.content ?? "",
+  );
+
+  const [tags, setTags] = useState(post?.tags ?? "");
+
+  const [imageUrl, setImageUrl] = useState(
+    post?.imageUrl ?? "",
+  );
+
+  // Individual validation messages.
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // General error shown when Save is clicked
-  // and one or more fields are invalid.
-  const [showSaveError, setShowSaveError] = useState(false);
+  // Assignment 2 validation message.
+  const [showSaveError, setShowSaveError] =
+    useState(false);
 
-  // Controls whether Markdown preview is open.
+  // Assignment 2.3 success message.
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Used while database save is running.
+  const [isPending, startTransition] = useTransition();
+
+  // Controls Markdown preview.
   const [showPreview, setShowPreview] = useState(false);
 
-  // Reference to the Content textarea.
+  // Reference to Content textarea.
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  // Remember where the cursor was before opening preview.
+  // Store cursor position before preview opens.
   const cursorPosition = useRef({
     start: 0,
     end: 0,
   });
 
+  // ---------------------------------------------------------
+  // VALIDATION
+  // ---------------------------------------------------------
+
   function validateForm() {
     const newErrors: FormErrors = {};
 
-    // -------------------------------------------------------
-    // TITLE VALIDATION
-    // -------------------------------------------------------
+    // TITLE
     if (!title.trim()) {
       newErrors.title = "Title is required";
     }
 
-    // -------------------------------------------------------
-    // DESCRIPTION VALIDATION
-    // -------------------------------------------------------
+    // DESCRIPTION
     if (!description.trim()) {
       newErrors.description = "Description is required";
     } else if (description.length > 200) {
@@ -82,30 +106,24 @@ export function PostForm({ post }: PostFormProps) {
         "Description is too long. Maximum is 200 characters";
     }
 
-    // -------------------------------------------------------
-    // CONTENT VALIDATION
-    // -------------------------------------------------------
+    // CONTENT
     if (!content.trim()) {
       newErrors.content = "Content is required";
     }
 
-    // -------------------------------------------------------
-    // IMAGE URL VALIDATION
-    // -------------------------------------------------------
+    // IMAGE URL
     if (!imageUrl.trim()) {
       newErrors.imageUrl = "Image URL is required";
     } else {
       try {
-        // URL() throws an error when the text is not a valid URL.
+        // Throws if the URL is invalid.
         new URL(imageUrl);
       } catch {
         newErrors.imageUrl = "This is not a valid URL";
       }
     }
 
-    // -------------------------------------------------------
-    // TAG VALIDATION
-    // -------------------------------------------------------
+    // TAGS
     if (!tags.trim()) {
       newErrors.tags = "At least one tag is required";
     }
@@ -114,23 +132,65 @@ export function PostForm({ post }: PostFormProps) {
 
     const hasErrors = Object.keys(newErrors).length > 0;
 
-    // Official Assignment 2 test checks this message.
     setShowSaveError(hasErrors);
 
     return !hasErrors;
   }
 
+  // ---------------------------------------------------------
+  // ASSIGNMENT 2.3 - SAVE TO DATABASE
+  // ---------------------------------------------------------
+
   function handleSave() {
-    // Assignment 2 only validates the form.
-    //
-    // Saving to the database belongs to Assignment 3.
-    validateForm();
+    // Keep Assignment 2 validation.
+    const valid = validateForm();
+
+    if (!valid) {
+      setSaveSuccess(false);
+      return;
+    }
+
+    startTransition(async () => {
+      // Data shared by create and update.
+      const postData = {
+        title: title.trim(),
+        category: category.trim(),
+        description: description.trim(),
+        content,
+        imageUrl: imageUrl.trim(),
+        tags: tags.trim(),
+      };
+
+      if (post) {
+        // -----------------------------------------------
+        // UPDATE EXISTING POST
+        // -----------------------------------------------
+
+        await updatePost(post.id, postData);
+      } else {
+        // -----------------------------------------------
+        // CREATE NEW POST
+        // -----------------------------------------------
+
+        await createPost(postData);
+      }
+
+      // Official Assignment 2.3 test expects
+      // this exact success text.
+      setSaveSuccess(true);
+
+      // Remove the general error after successful save.
+      setShowSaveError(false);
+    });
   }
+
+  // ---------------------------------------------------------
+  // MARKDOWN PREVIEW
+  // ---------------------------------------------------------
 
   function togglePreview() {
     if (!showPreview) {
-      // Before opening preview, remember the exact
-      // textarea cursor position.
+      // Remember cursor position before hiding textarea.
       const textarea = contentRef.current;
 
       if (textarea) {
@@ -144,11 +204,11 @@ export function PostForm({ post }: PostFormProps) {
       return;
     }
 
-    // Close the preview and show textarea again.
+    // Close preview.
     setShowPreview(false);
 
-    // Wait until React renders the textarea,
-    // then restore the cursor position.
+    // Wait for textarea to appear again,
+    // then restore cursor position.
     requestAnimationFrame(() => {
       const textarea = contentRef.current;
 
@@ -165,7 +225,10 @@ export function PostForm({ post }: PostFormProps) {
 
   return (
     <div className="mx-auto max-w-4xl">
-      {/* Page heading */}
+      {/* ---------------------------------------------------
+          PAGE HEADING
+      --------------------------------------------------- */}
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
           {post ? "Update Post" : "Create Post"}
@@ -181,7 +244,8 @@ export function PostForm({ post }: PostFormProps) {
       <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         {/* ---------------------------------------------------
             TITLE
-            --------------------------------------------------- */}
+        --------------------------------------------------- */}
+
         <div>
           <label
             htmlFor="title"
@@ -193,7 +257,10 @@ export function PostForm({ post }: PostFormProps) {
           <input
             id="title"
             value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            onChange={(event) => {
+              setTitle(event.target.value);
+              setSaveSuccess(false);
+            }}
             className="w-full rounded-lg border border-gray-300 px-4 py-3"
           />
 
@@ -206,7 +273,8 @@ export function PostForm({ post }: PostFormProps) {
 
         {/* ---------------------------------------------------
             CATEGORY
-            --------------------------------------------------- */}
+        --------------------------------------------------- */}
+
         <div>
           <label
             htmlFor="category"
@@ -218,14 +286,18 @@ export function PostForm({ post }: PostFormProps) {
           <input
             id="category"
             value={category}
-            onChange={(event) => setCategory(event.target.value)}
+            onChange={(event) => {
+              setCategory(event.target.value);
+              setSaveSuccess(false);
+            }}
             className="w-full rounded-lg border border-gray-300 px-4 py-3"
           />
         </div>
 
         {/* ---------------------------------------------------
             DESCRIPTION
-            --------------------------------------------------- */}
+        --------------------------------------------------- */}
+
         <div>
           <label
             htmlFor="description"
@@ -237,15 +309,17 @@ export function PostForm({ post }: PostFormProps) {
           <textarea
             id="description"
             value={description}
-            onChange={(event) =>
-              setDescription(event.target.value)
-            }
+            onChange={(event) => {
+              setDescription(event.target.value);
+              setSaveSuccess(false);
+            }}
             rows={4}
             className="w-full rounded-lg border border-gray-300 px-4 py-3"
           />
 
           <div className="mt-1 flex justify-between text-xs text-gray-400">
             <span>Short description</span>
+
             <span>{description.length}/200</span>
           </div>
 
@@ -258,7 +332,8 @@ export function PostForm({ post }: PostFormProps) {
 
         {/* ---------------------------------------------------
             CONTENT + MARKDOWN PREVIEW
-            --------------------------------------------------- */}
+        --------------------------------------------------- */}
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <label
@@ -268,7 +343,6 @@ export function PostForm({ post }: PostFormProps) {
               Content
             </label>
 
-            {/* Official test checks Preview / Close Preview */}
             <button
               type="button"
               onClick={togglePreview}
@@ -279,7 +353,6 @@ export function PostForm({ post }: PostFormProps) {
           </div>
 
           {showPreview ? (
-            // Render Markdown while preview is open.
             <div
               data-test-id="content-preview"
               className="min-h-48 rounded-lg border border-gray-200 bg-gray-50 p-4 leading-7 text-gray-700"
@@ -292,9 +365,10 @@ export function PostForm({ post }: PostFormProps) {
               ref={contentRef}
               id="content"
               value={content}
-              onChange={(event) =>
-                setContent(event.target.value)
-              }
+              onChange={(event) => {
+                setContent(event.target.value);
+                setSaveSuccess(false);
+              }}
               rows={12}
               className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm"
             />
@@ -309,7 +383,8 @@ export function PostForm({ post }: PostFormProps) {
 
         {/* ---------------------------------------------------
             TAGS
-            --------------------------------------------------- */}
+        --------------------------------------------------- */}
+
         <div>
           <label
             htmlFor="tags"
@@ -321,7 +396,10 @@ export function PostForm({ post }: PostFormProps) {
           <input
             id="tags"
             value={tags}
-            onChange={(event) => setTags(event.target.value)}
+            onChange={(event) => {
+              setTags(event.target.value);
+              setSaveSuccess(false);
+            }}
             placeholder="Front-End, Dev Tools"
             className="w-full rounded-lg border border-gray-300 px-4 py-3"
           />
@@ -338,8 +416,9 @@ export function PostForm({ post }: PostFormProps) {
         </div>
 
         {/* ---------------------------------------------------
-            IMAGE URL + IMAGE PREVIEW
-            --------------------------------------------------- */}
+            IMAGE URL + PREVIEW
+        --------------------------------------------------- */}
+
         <div>
           <label
             htmlFor="image-url"
@@ -351,9 +430,10 @@ export function PostForm({ post }: PostFormProps) {
           <input
             id="image-url"
             value={imageUrl}
-            onChange={(event) =>
-              setImageUrl(event.target.value)
-            }
+            onChange={(event) => {
+              setImageUrl(event.target.value);
+              setSaveSuccess(false);
+            }}
             className="w-full rounded-lg border border-gray-300 px-4 py-3"
           />
 
@@ -363,7 +443,7 @@ export function PostForm({ post }: PostFormProps) {
             </p>
           )}
 
-          {/* Official Assignment 2 test checks this exact test id */}
+          {/* Assignment 2 test checks this test-id */}
           {imageUrl && (
             <img
               data-test-id="image-preview"
@@ -374,21 +454,38 @@ export function PostForm({ post }: PostFormProps) {
           )}
         </div>
 
-        {/* General Save validation error */}
+        {/* ---------------------------------------------------
+            VALIDATION ERROR
+        --------------------------------------------------- */}
+
         {showSaveError && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             Please fix the errors before saving
           </div>
         )}
 
-        {/* Save button */}
+        {/* ---------------------------------------------------
+            ASSIGNMENT 2.3 SUCCESS
+        --------------------------------------------------- */}
+
+        {saveSuccess && (
+          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            Post updated successfully
+          </div>
+        )}
+
+        {/* ---------------------------------------------------
+            SAVE
+        --------------------------------------------------- */}
+
         <div className="flex justify-end">
           <button
             type="button"
+            disabled={isPending}
             onClick={handleSave}
-            className="rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800"
+            className="rounded-lg bg-gray-900 px-6 py-3 font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save
+            {isPending ? "Saving..." : "Save"}
           </button>
         </div>
       </div>

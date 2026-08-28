@@ -1,41 +1,52 @@
-import type { Post } from "@repo/db/data";
 import { marked } from "marked";
 import Link from "next/link";
+
+import { LikeButton } from "./LikeButton";
+
+// Assignment 2.3 gets the post from Prisma instead
+// of the old static @repo/db/data array.
+type DetailPost = {
+  id: number;
+  urlId: string;
+  title: string;
+  content: string;
+  category: string;
+  description: string;
+  imageUrl: string;
+  tags: string;
+  active: boolean;
+  date: Date;
+  views: number;
+  likes: number;
+};
 
 export async function BlogDetail({
   post,
 }: {
-  post: Post;
+  post: DetailPost;
 }) {
-  // Convert the Markdown content into HTML.
-  //
-  // Example:
-  // **sint voluptas**
-  //
-  // becomes:
-  // <strong>sint voluptas</strong>
+  // Convert Markdown into HTML.
   const content = await marked.parse(post.content);
 
-  // Tags are stored as one comma-separated string.
-  // Split them into individual tags.
+  // Split comma-separated tags.
   const postTags = post.tags
     .split(",")
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
 
-  // Format the post date.
-  //
-  // Example:
+  // Format date:
   // 18 Apr 2022
-  const formattedDate = post.date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const formattedDate = post.date.toLocaleDateString(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    },
+  );
 
   return (
     <article
-      // Official Playwright test looks for blog-post-1
       data-test-id={`blog-post-${post.id}`}
       className="mx-auto max-w-4xl py-10"
     >
@@ -67,7 +78,7 @@ export async function BlogDetail({
         </Link>
       </h1>
 
-      {/* Post tags */}
+      {/* Tags */}
       <div className="mt-5 flex flex-wrap gap-2">
         {postTags.map((tag) => (
           <span
@@ -80,20 +91,16 @@ export async function BlogDetail({
       </div>
 
       {/* Views and likes */}
-      <div className="mt-5 flex gap-5 border-b border-gray-200 pb-6 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
-        <span>
-          {/* Opening the detail screen represents one additional view.
-              The seeded post starts at 320, so the detail screen shows 321. */}
-          {post.views + 1} views
-        </span>
+      <div className="mt-5 flex items-center gap-5 border-b border-gray-200 pb-6 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
+        <span>{post.views} views</span>
 
-        <span>
-          {post.likes} likes
-        </span>
+        <LikeButton
+          postId={post.id}
+          initialLikes={post.likes}
+        />
       </div>
 
-      {/* Render the Markdown content as HTML.
-          The official Playwright test checks this exact test id. */}
+      {/* Markdown content */}
       <div
         data-test-id="content-markdown"
         className="mt-8 space-y-4 text-base leading-8 text-gray-700 dark:text-gray-300"

@@ -1,33 +1,65 @@
 "use client";
 
-import { posts } from "@repo/db/data";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
 
-export function AdminPostList() {
-  // Text used to filter by post title or content.
+import { togglePostActive } from "../app/actions";
+
+// Shape of the post sent from app/page.tsx.
+type AdminPost = {
+  id: number;
+  urlId: string;
+  title: string;
+  content: string;
+  category: string;
+  description: string;
+  imageUrl: string;
+  tags: string;
+  active: boolean;
+  views: number;
+
+  // Server converts Prisma Date to ISO string.
+  date: string;
+};
+
+export function AdminPostList({
+  posts,
+}: {
+  posts: AdminPost[];
+}) {
+  const router = useRouter();
+
+  // Lets us know while a database update is happening.
+  const [isPending, startTransition] = useTransition();
+
+  // Filter by title/content.
   const [contentFilter, setContentFilter] = useState("");
 
-  // Text used to filter by tags.
+  // Filter by tag.
   const [tagFilter, setTagFilter] = useState("");
 
-  // The official test enters dates like 01012022.
+  // Test enters dates such as 01012022.
   const [dateFilter, setDateFilter] = useState("");
 
-  // Default sort is newest post first.
+  // Default = newest first.
   const [sortBy, setSortBy] = useState("date-desc");
 
-  // Assignment 2 only requires the active button
-  // to display a message when clicked.
+  // Optional message after activating/deactivating.
   const [statusMessage, setStatusMessage] = useState("");
 
+  // ---------------------------------------------------------
+  // FILTER AND SORT
+  // ---------------------------------------------------------
+
   const filteredPosts = useMemo(() => {
-    // Make a copy so we do not change the original post data.
+    // Work with a copy of the database posts.
     let result = [...posts];
 
-    // ---------------------------------------------------------
+    // -------------------------------------------------------
     // FILTER BY TITLE OR CONTENT
-    // ---------------------------------------------------------
+    // -------------------------------------------------------
+
     const contentQuery = contentFilter.trim().toLowerCase();
 
     if (contentQuery) {
@@ -42,9 +74,10 @@ export function AdminPostList() {
       });
     }
 
-    // ---------------------------------------------------------
+    // -------------------------------------------------------
     // FILTER BY TAG
-    // ---------------------------------------------------------
+    // -------------------------------------------------------
+
     const tagQuery = tagFilter.trim().toLowerCase();
 
     if (tagQuery) {
@@ -53,17 +86,17 @@ export function AdminPostList() {
       );
     }
 
-    // ---------------------------------------------------------
+    // -------------------------------------------------------
     // FILTER BY DATE
-    // ---------------------------------------------------------
-    //
-    // Example test input:
+    // -------------------------------------------------------
+
+    // Example:
     // 01012022
     //
-    // We interpret that as:
     // month = 01
-    // day = 01
-    // year = 2022
+    // day   = 01
+    // year  = 2022
+
     if (/^\d{8}$/.test(dateFilter)) {
       const month = Number(dateFilter.slice(0, 2));
       const day = Number(dateFilter.slice(2, 4));
@@ -72,13 +105,14 @@ export function AdminPostList() {
       const selectedDate = new Date(year, month - 1, day);
 
       result = result.filter(
-        (post) => post.date >= selectedDate,
+        (post) => new Date(post.date) >= selectedDate,
       );
     }
 
-    // ---------------------------------------------------------
-    // SORT POSTS
-    // ---------------------------------------------------------
+    // -------------------------------------------------------
+    // SORT
+    // -------------------------------------------------------
+
     result.sort((a, b) => {
       if (sortBy === "title-asc") {
         return a.title.localeCompare(b.title);
@@ -89,19 +123,61 @@ export function AdminPostList() {
       }
 
       if (sortBy === "date-asc") {
-        return a.date.getTime() - b.date.getTime();
+        return (
+          new Date(a.date).getTime() -
+          new Date(b.date).getTime()
+        );
       }
 
-      // Default is date descending.
-      return b.date.getTime() - a.date.getTime();
+      // Default:
+      // newest first.
+      return (
+        new Date(b.date).getTime() -
+        new Date(a.date).getTime()
+      );
     });
 
     return result;
-  }, [contentFilter, tagFilter, dateFilter, sortBy]);
+  }, [
+    posts,
+    contentFilter,
+    tagFilter,
+    dateFilter,
+    sortBy,
+  ]);
+
+  // ---------------------------------------------------------
+  // ASSIGNMENT 2.3
+  // ACTIVATE / DEACTIVATE POST
+  // ---------------------------------------------------------
+
+  function handleToggle(
+    postId: number,
+    title: string,
+    currentlyActive: boolean,
+  ) {
+    startTransition(async () => {
+      // Update the real SQLite database.
+      await togglePostActive(postId);
+
+      setStatusMessage(
+        `Post "${title}" is now ${
+          currentlyActive ? "Inactive" : "Active"
+        }.`,
+      );
+
+      // Ask the server component to run again.
+      // This gets the new post.active value from Prisma.
+      router.refresh();
+    });
+  }
 
   return (
     <div>
-      {/* Filter and sort controls */}
+      {/* ---------------------------------------------------
+          FILTERS
+      --------------------------------------------------- */}
+
       <section className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="mb-5 flex items-center justify-between">
           <div>
@@ -114,7 +190,7 @@ export function AdminPostList() {
             </p>
           </div>
 
-          {/* Official test expects this exact link text */}
+          {/* Opens Assignment 2.3 create screen */}
           <Link
             href="/posts/create"
             className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
@@ -124,7 +200,7 @@ export function AdminPostList() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* Content filter */}
+          {/* CONTENT FILTER */}
           <div>
             <label
               htmlFor="content-filter"
@@ -144,7 +220,7 @@ export function AdminPostList() {
             />
           </div>
 
-          {/* Tag filter */}
+          {/* TAG FILTER */}
           <div>
             <label
               htmlFor="tag-filter"
@@ -164,7 +240,7 @@ export function AdminPostList() {
             />
           </div>
 
-          {/* Date filter */}
+          {/* DATE FILTER */}
           <div>
             <label
               htmlFor="date-filter"
@@ -186,7 +262,7 @@ export function AdminPostList() {
             />
           </div>
 
-          {/* Sorting */}
+          {/* SORT */}
           <div>
             <label
               htmlFor="sort-by"
@@ -222,7 +298,7 @@ export function AdminPostList() {
           </div>
         </div>
 
-        {/* Status message shown after clicking Active/Inactive */}
+        {/* Message after database update */}
         {statusMessage && (
           <p className="mt-4 rounded-lg bg-gray-100 px-4 py-3 text-sm text-gray-600">
             {statusMessage}
@@ -230,26 +306,24 @@ export function AdminPostList() {
         )}
       </section>
 
-      {/* Post list */}
+      {/* ---------------------------------------------------
+          POST LIST
+      --------------------------------------------------- */}
+
       <section className="space-y-5">
         {filteredPosts.map((post) => {
-          // Convert tags into:
-          // #Front-End, #Dev Tools
           const formattedTags = post.tags
             .split(",")
             .map((tag) => `#${tag.trim()}`)
             .join(", ");
 
-          // Format dates like:
-          // Dec 16, 2024
-          const formattedDate = post.date.toLocaleDateString(
-            "en-US",
-            {
-              month: "short",
-              day: "2-digit",
-              year: "numeric",
-            },
-          );
+          const formattedDate = new Date(
+            post.date,
+          ).toLocaleDateString("en-US", {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          });
 
           return (
             <article
@@ -258,7 +332,6 @@ export function AdminPostList() {
               className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
             >
               <div className="flex flex-col md:flex-row">
-                {/* Post image */}
                 <img
                   src={post.imageUrl}
                   alt={post.title}
@@ -266,7 +339,7 @@ export function AdminPostList() {
                 />
 
                 <div className="flex flex-1 flex-col p-6">
-                  {/* Title opens the modify screen */}
+                  {/* Opens update post screen */}
                   <Link
                     href={`/post/${post.urlId}`}
                     className="text-xl font-bold text-gray-900 hover:underline"
@@ -274,31 +347,30 @@ export function AdminPostList() {
                     {post.title}
                   </Link>
 
-                  {/* Category */}
                   <p className="mt-2 text-sm font-medium text-gray-600">
                     {post.category}
                   </p>
 
-                  {/* Tags */}
                   <p className="mt-3 text-sm text-gray-500">
                     {formattedTags}
                   </p>
 
-                  {/* Date */}
                   <p className="mt-2 text-sm text-gray-500">
                     Posted on {formattedDate}
                   </p>
 
                   <div className="mt-auto pt-5">
-                    {/* Assignment 2 only:
-                        show a message when clicked */}
+                    {/* Assignment 2.3:
+                        clicking this changes the DATABASE */}
+
                     <button
                       type="button"
+                      disabled={isPending}
                       onClick={() =>
-                        setStatusMessage(
-                          `Post "${post.title}" is currently ${
-                            post.active ? "Active" : "Inactive"
-                          }.`,
+                        handleToggle(
+                          post.id,
+                          post.title,
+                          post.active,
                         )
                       }
                       className={
@@ -307,7 +379,9 @@ export function AdminPostList() {
                           : "rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600"
                       }
                     >
-                      {post.active ? "Active" : "Inactive"}
+                      {post.active
+                        ? "Active"
+                        : "Inactive"}
                     </button>
                   </div>
                 </div>

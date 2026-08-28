@@ -1,30 +1,70 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma schema for Assignment 2.3.
+// This database stores blog posts and post likes.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
+  // The assignment currently uses SQLite.
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+
+  // DATABASE_URL comes from the environment file.
+  url = env("DATABASE_URL")
 }
 
 model Post {
-  id     Int      @id @default(autoincrement())
-  urlId  String   @unique
-  title  String
-  date   DateTime @default(now())
-  views  Int      @default(0)
-  active Boolean  @default(true)
-  Likes  Like[]
-  // Incomplete
+  // Unique numeric post id.
+  id Int @id @default(autoincrement())
+
+  // URL-friendly post id.
+  // Example:
+  // "boost-your-conversion-rate"
+  urlId String @unique
+
+  // Post title.
+  title String
+
+  // Full Markdown content.
+  content String
+
+  // Post category.
+  category String
+
+  // Short description shown in lists.
+  description String
+
+  // Image URL used by the client and admin apps.
+  imageUrl String
+
+  // Comma-separated tags.
+  // Example:
+  // "Front-End,Dev Tools"
+  tags String
+
+  // Creation date.
+  date DateTime @default(now())
+
+  // Number of times the post has been viewed.
+  views Int @default(0)
+
+  // Whether this post is visible on the public client.
+  active Boolean @default(true)
+
+  // Likes belonging to this post.
+  likes Like[]
 }
 
 model Like {
+  // The post being liked.
   postId Int
-  userIP String
-  Post   Post   @relation(fields: [postId], references: [id])
 
+  // Assignment 2.3 identifies a like using the user's IP.
+  userIP String
+
+  // Relation back to Post.
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // One IP can like each post only once.
   @@id([postId, userIP])
 }

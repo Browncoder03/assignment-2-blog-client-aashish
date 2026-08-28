@@ -1,16 +1,18 @@
+import { client } from "@repo/db/client";
+
 import { AdminPostList } from "../components/AdminPostList";
 import { isLoggedIn } from "../utils/auth";
 
 import { login, logout } from "./actions";
 
 export default async function Home() {
-  // Check whether the current user has an Assignment 2
-  // authentication cookie.
+  // Check whether the current user is logged in.
   const loggedIn = await isLoggedIn();
 
   // ---------------------------------------------------------
   // LOGGED OUT SCREEN
   // ---------------------------------------------------------
+
   if (!loggedIn) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -20,7 +22,7 @@ export default async function Home() {
               Admin Login
             </h1>
 
-            {/* Official home test checks this exact text */}
+            {/* Official test checks this exact text */}
             <p className="mt-2 text-sm text-gray-500">
               Sign in to your account
             </p>
@@ -28,7 +30,6 @@ export default async function Home() {
 
           <form action={login} className="space-y-5">
             <div>
-              {/* The official test finds the input by this label */}
               <label
                 htmlFor="password"
                 className="mb-2 block text-sm font-medium text-gray-700"
@@ -46,7 +47,6 @@ export default async function Home() {
               />
             </div>
 
-            {/* Keep only ONE exact "Sign In" text on this screen */}
             <button
               type="submit"
               className="w-full rounded-lg bg-gray-900 px-4 py-3 font-medium text-white hover:bg-gray-800"
@@ -60,15 +60,37 @@ export default async function Home() {
   }
 
   // ---------------------------------------------------------
+  // ASSIGNMENT 2.3
+  // LOAD POSTS FROM THE REAL DATABASE
+  // ---------------------------------------------------------
+
+  const databasePosts = await client.db.post.findMany();
+
+  // Convert Date into a string before passing it from
+  // the server component to our client component.
+  const posts = databasePosts.map((post) => ({
+    id: post.id,
+    urlId: post.urlId,
+    title: post.title,
+    content: post.content,
+    category: post.category,
+    description: post.description,
+    imageUrl: post.imageUrl,
+    tags: post.tags,
+    active: post.active,
+    views: post.views,
+    date: post.date.toISOString(),
+  }));
+
+  // ---------------------------------------------------------
   // LOGGED-IN ADMIN SCREEN
   // ---------------------------------------------------------
+
   return (
     <main className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="mx-auto max-w-6xl">
-        {/* Admin header */}
         <header className="mb-8 flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <div>
-            {/* Official test checks this exact heading */}
             <h1 className="text-3xl font-bold text-gray-900">
               Admin of Full Stack Blog
             </h1>
@@ -78,7 +100,6 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* Logout removes the Assignment 2 authentication */}
           <form action={logout}>
             <button
               type="submit"
@@ -89,8 +110,8 @@ export default async function Home() {
           </form>
         </header>
 
-        {/* Interactive filtering/sorting list */}
-        <AdminPostList />
+        {/* Posts now come from Prisma instead of static data */}
+        <AdminPostList posts={posts} />
       </div>
     </main>
   );
