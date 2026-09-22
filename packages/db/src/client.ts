@@ -6,20 +6,18 @@ declare global {
 }
 
 export const createClient = () => {
+  // Reuse the connection during development and server execution.
   if (global.prisma) {
     return global.prisma;
   }
 
-  const URL = env.DATABASE_URL;
-
   const prisma = new PrismaClient({
-    datasourceUrl: URL,
+    datasourceUrl: env.DATABASE_URL,
   });
 
-  console.log("Connected to database");
-  console.log(URL);
-
+  // Never print the database URL because it contains credentials.
   global.prisma = prisma;
+
   return prisma;
 };
 

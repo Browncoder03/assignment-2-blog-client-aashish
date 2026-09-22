@@ -1,0 +1,76 @@
+// Database models for blog posts, likes, and threaded comments.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id Int @id @default(autoincrement())
+
+  // Unique slug used in the post URL.
+  urlId String @unique
+
+  title       String
+  content     String
+  category    String
+  description String
+  imageUrl    String
+
+  // Comma-separated tags.
+  tags String
+
+  date   DateTime @default(now())
+  views  Int      @default(0)
+  active Boolean  @default(true)
+
+  likes Like[]
+
+  // All comments and replies belonging to this post.
+  comments Comment[]
+}
+
+model Like {
+  postId Int
+  userIP String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Each IP can like a particular post once.
+  @@id([postId, userIP])
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+
+  // The post this comment belongs to.
+  postId Int
+
+  // Reader-entered display name.
+  authorName String
+
+  // Store comments as plain text.
+  content String
+
+  createdAt DateTime @default(now())
+
+  // Empty for a top-level comment.
+  // For a reply, this identifies the parent comment.
+  parentId Int?
+
+  // Deleting a post removes its comments.
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Deleting a comment removes its replies.
+  parent Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+
+  replies Comment[] @relation("CommentReplies")
+
+  // Help retrieve comments and replies efficiently.
+  @@index([postId, createdAt])
+  @@index([parentId])
+}
