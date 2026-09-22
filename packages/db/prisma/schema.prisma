@@ -1,70 +1,76 @@
-// Prisma schema for Assignment 2.3.
-// This database stores blog posts and post likes.
+// Database models for blog posts, likes, and threaded comments.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  // The assignment currently uses SQLite.
   provider = "sqlite"
-
-  // DATABASE_URL comes from the environment file.
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model Post {
-  // Unique numeric post id.
   id Int @id @default(autoincrement())
 
-  // URL-friendly post id.
-  // Example:
-  // "boost-your-conversion-rate"
+  // Unique slug used in the post URL.
   urlId String @unique
 
-  // Post title.
-  title String
-
-  // Full Markdown content.
-  content String
-
-  // Post category.
-  category String
-
-  // Short description shown in lists.
+  title       String
+  content     String
+  category    String
   description String
-
-  // Image URL used by the client and admin apps.
-  imageUrl String
+  imageUrl    String
 
   // Comma-separated tags.
-  // Example:
-  // "Front-End,Dev Tools"
   tags String
 
-  // Creation date.
-  date DateTime @default(now())
+  date   DateTime @default(now())
+  views  Int      @default(0)
+  active Boolean  @default(true)
 
-  // Number of times the post has been viewed.
-  views Int @default(0)
-
-  // Whether this post is visible on the public client.
-  active Boolean @default(true)
-
-  // Likes belonging to this post.
   likes Like[]
+
+  // All comments and replies belonging to this post.
+  comments Comment[]
 }
 
 model Like {
-  // The post being liked.
   postId Int
-
-  // Assignment 2.3 identifies a like using the user's IP.
   userIP String
 
-  // Relation back to Post.
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  // One IP can like each post only once.
+  // Each IP can like a particular post once.
   @@id([postId, userIP])
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+
+  // The post this comment belongs to.
+  postId Int
+
+  // Reader-entered display name.
+  authorName String
+
+  // Store comments as plain text.
+  content String
+
+  createdAt DateTime @default(now())
+
+  // Empty for a top-level comment.
+  // For a reply, this identifies the parent comment.
+  parentId Int?
+
+  // Deleting a post removes its comments.
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Deleting a comment removes its replies.
+  parent Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+
+  replies Comment[] @relation("CommentReplies")
+
+  // Help retrieve comments and replies efficiently.
+  @@index([postId, createdAt])
+  @@index([parentId])
 }

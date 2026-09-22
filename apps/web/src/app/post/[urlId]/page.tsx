@@ -2,28 +2,21 @@ import { client } from "@repo/db/client";
 import { notFound } from "next/navigation";
 
 import { BlogDetail } from "@/components/Blog/Detail";
+import { DiscussionCorner } from "@/components/Blog/DiscussionCorner";
 import { AppLayout } from "@/components/Layout/AppLayout";
+
+// Read current database data whenever this page is requested.
+export const dynamic = "force-dynamic";
 
 export default async function Page({
   params,
 }: {
   params: Promise<{ urlId: string }>;
 }) {
-  // Get the post id from the URL.
-  //
-  // Example:
-  // /post/boost-your-conversion-rate
   const { urlId } = await params;
 
-  // ---------------------------------------------------------
-  // ASSIGNMENT 2.3
-  // FIND THE POST IN THE DATABASE
-  // ---------------------------------------------------------
-
   const existingPost = await client.db.post.findUnique({
-    where: {
-      urlId,
-    },
+    where: { urlId },
   });
 
   // Only active posts can be viewed publicly.
@@ -31,16 +24,7 @@ export default async function Page({
     notFound();
   }
 
-  // ---------------------------------------------------------
-  // INCREASE VIEWS
-  // ---------------------------------------------------------
-  //
-  // Every visit to the detail page increases views by 1.
-  //
-  // Example:
-  // 320 -> 321
-  // next visit -> 322
-
+  // Preserve the existing view counter and likes count.
   const post = await client.db.post.update({
     where: {
       id: existingPost.id,
@@ -50,8 +34,6 @@ export default async function Page({
         increment: 1,
       },
     },
-
-    // Count the Like records belonging to this post.
     include: {
       _count: {
         select: {
@@ -61,7 +43,33 @@ export default async function Page({
     },
   });
 
-  // Convert the Prisma post into the shape BlogDetail needs.
+  // Load both top-level comments and replies.
+  // The discussion component groups replies under their parents.
+  const comments = await client.db.comment.findMany({
+    where: {
+      postId: post.id,
+    },
+    orderBy: [
+      { createdAt: "asc" },
+      { id: "asc" },
+    ],
+    select: {
+      id: true,
+      postId: true,
+      parentId: true,
+      authorName: true,
+      content: true,
+      createdAt: true,
+    },
+  });
+
+  // Convert database dates to strings for the client component.
+  const initialComments = comments.map((comment) => ({
+    ...comment,
+    createdAt: comment.createdAt.toISOString(),
+  }));
+
+  // Keep the data format expected by BlogDetail.
   const detailPost = {
     id: post.id,
     urlId: post.urlId,
@@ -74,14 +82,18 @@ export default async function Page({
     active: post.active,
     date: post.date,
     views: post.views,
-
-    // Likes are now stored as rows in the Like table.
     likes: post._count.likes,
   };
 
   return (
     <AppLayout>
       <BlogDetail post={detailPost} />
+
+      <DiscussionCorner
+        key={post.id}
+        postId={post.id}
+        initialComments={initialComments}
+      />
     </AppLayout>
   );
 }
