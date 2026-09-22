@@ -4,6 +4,7 @@ import { getActivePosts } from "@/functions/posts";
 
 import { Content } from "../Content";
 import { LeftMenu } from "../Menu/LeftMenu";
+import { ResponsiveSidebar } from "./ResponsiveSidebar";
 import { TopMenu } from "./TopMenu";
 
 type AppLayoutProps = PropsWithChildren<{
@@ -22,47 +23,41 @@ export async function AppLayout({
   selectedYear,
   selectedMonth,
 }: AppLayoutProps) {
+  // Load active database posts for sidebar links and counts.
   const activePosts = await getActivePosts();
-
-  // Share the same navigation content between both layouts.
-  const navigation = (
-    <LeftMenu
-      posts={activePosts}
-      selectedCategory={selectedCategory}
-      selectedTag={selectedTag}
-      selectedYear={selectedYear}
-      selectedMonth={selectedMonth}
-    />
-  );
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors dark:bg-gray-950 dark:text-gray-100">
       <div className="mx-auto max-w-7xl px-3 py-4 sm:px-4 lg:px-8 lg:py-6">
-        {/* Very narrow windows: compact, expandable navigation. */}
-        <details className="mb-4 rounded-xl border border-gray-200 bg-white shadow-sm sm:hidden dark:border-gray-800 dark:bg-gray-900">
-          <summary className="cursor-pointer rounded-xl px-4 py-4 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
-            Browse topics
-          </summary>
+        {/*
+          Narrow screens: collapsible menu above the content.
+          Split screen and desktop: menu beside the content.
+        */}
+        <div className="flex flex-col items-start gap-4 sm:flex-row lg:gap-8">
+          {/*
+            Render LeftMenu once to avoid duplicate links.
+            ResponsiveSidebar handles its size and visibility.
+          */}
+          <ResponsiveSidebar>
+            <LeftMenu
+              posts={activePosts}
+              selectedCategory={selectedCategory}
+              selectedTag={selectedTag}
+              selectedYear={selectedYear}
+              selectedMonth={selectedMonth}
+            />
+          </ResponsiveSidebar>
 
-          <div className="border-t border-gray-200 p-4 dark:border-gray-800">
-            {navigation}
-          </div>
-        </details>
-
-        {/* Split screen and desktop: sidebar beside the article. */}
-        <div className="flex items-start gap-4 lg:gap-8">
-          <aside
-            aria-label="Blog navigation"
-            className="hidden w-44 shrink-0 break-words rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:block lg:w-64 lg:p-5 dark:border-gray-800 dark:bg-gray-900"
-          >
-            {navigation}
-          </aside>
-
-          {/* min-w-0 allows this column to shrink within the row. */}
-          <div className="min-w-0 flex-1">
+          {/*
+            Fill the remaining width.
+            min-w-0 allows this column to shrink in split screen.
+          */}
+          <div className="w-full min-w-0 flex-1">
             <Content>
+              {/* Search field and theme switch. */}
               <TopMenu query={query} />
 
+              {/* Display the current page content. */}
               <div className="mt-6 min-w-0">
                 {children}
               </div>

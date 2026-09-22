@@ -1,299 +1,424 @@
-# Assignment 2 - Blog - Client App
+# Full Stack Blog — Assignment 2
 
-The goal of this assignment is to implement all the client side functionality.
-Example implementation is in the image below.
+A blogging application with a public website, an admin dashboard, and a SQLite database.
 
-## Success Criteria
+The project includes the functionality for Assignments 2.1, 2.2, and 2.3, together with pagination, a rich-text editor, and threaded comments.
 
-- ✅ All of the tests must be passing
-- ✅ You must be able to explain any code in the codebase
+## Verification status
 
-## 👾 Requirements - Assignment 2.1 - Client
+The complete Playwright suite passed locally:
 
-> 💡Idea! Create a new issue in your repository, where you can track the completion of these items. Just copy paste them into the issue and mark them as complete as you go. Make sure you copy the source from README.md not the preview text.
+**46 tests passed in 51.5 seconds.**
 
-### HOME SCREEN
+The passing run used:
 
-- [ ] User must see only the "active" posts
-- [ ] User must see the list of blog post categories, where each category points to UI showing only posts of that category
-- [ ] User must see the list of blog post tags, where each tag points to UI showing only posts of that category
-- [ ] User must see the history of blog posts, showing month and year, where each moth, year tuple points to UI showing only posts of that category
-- [ ] Tags and history items shown are only considered from active posts
-- [ ] The list shows the following items:
-  - blog title, pointing to detail page
-  - short description
-  - date
-  - image
-  - tags
-  - likes
-  - views
-- [ ] User must be able to switch between dark and light theme with a button
-      The dark theme setting is stored in the "data-theme" attribute on html element
-- [ ] There is a search functionality that filters blogs based on string found in title or description, redirecting to search page
+- Node.js 22.23.2
+- pnpm 10.2.0
+- Playwright 1.50.0
+- Production builds of the web and admin applications
+- One worker, with retries disabled
 
-### DETAIL SCREEN
+This includes the original assignment tests and the added pagination, rich-text editor, and Discussion Corner tests.
 
-- [ ] Detail page shows the same items as list item, but the short description is replaced by formatted long description
-- [ ] Detail text is stored as Markdown, which needs to be converted to HTML
+Production builds also completed successfully. This result refers to the Playwright suite; it does not claim that every separate unit test, lint check, or deployment check has been completed.
 
-### CATEGORY SCREEN
-
-- [ ] Displays posts from the category from url (e.g. /category/react)
-- [ ] Displays "0 Posts" when search does no posts have that category
-
-### HISTORY SCREEN
-
-- [ ] Displays posts from year and month specified in the url (e.g. /history/2024/12)
-- [ ] Displays "0 Posts" when no posts are from that given month and year
-
-### TAG SCREEN
-
-- [ ] Displays posts with the tag url (e.g. /tags/dev-tools)
-- [ ] Displays "0 Posts" when search does no posts have that tag
-
-### SEARCH SCREEN
-
-- [ ] Displays results based on search string stored in the query string (e.g. /search?q=Fat)
-- [ ] Displays "0 Posts" when search does not find anything
-
-## 👾 Requirements - Assignment 2.2 - Admin
-
-> 💡Idea! Create a new issue in your repository, where you can track the completion of these items. Just copy paste them into the issue and mark them as complete as you go. Make sure you copy the source from README.md not the preview text.
-
-### ADMIN HOME SCREEN
-
-- [ ] Shows Login screen if not logged
-- [ ] Shows List screen if logged
-- [ ] There must be a logout button
-- [ ] Clicking the logout button logs the user out
-- [ ] Authenticate the current client using a hard-coded password
-- [ ] Use a httpOnly cookie and name it "auth_token" to remember the signed-in state.
-
-### ADMIN LIST SCREEN
-
-- [ ] Shows both active and inactive posts
-- [ ] Article list is only accessible to logged-in users.
-- [ ] There is a filter screen that allows filtering posts by:
-  - [ ] Title or content
-  - [ ] Tags
-  - [ ] Date
-  - [ ] Visibility
-- [ ] You can combine multiple filters
-- [ ] Users can sort posts by name or creation date, both ascending and descending
-- [ ] The post list displays a list of filtered items with the following information:
-  - [ ] The list post item displays the image, title of the post
-  - [ ] The list post items display metadata such as category, tags, and "active" status.
-  - [ ] The active status is a button that, on click, just displays a message
-- [ ] Clicking on the title takes the user to the MODIFY SCREEN, allowing the user to modify the current post
-- [ ] There is a button to create new posts
-- [ ] Clicking on the "Create Post" button takes the user to the CREATE SCREEN
-
-### ADMIN CREATE and UPDATE screen
-
-Both create and update screens display the same UI, but the update screen preloads the data into fields.
-
-- [ ] Page is only accessible to logged in user
-- [ ] There must be the following fields which must be validated for errors:
-  - [ ] Title (`input, string`)
-  - [ ] Description (textarea, string, max 200 characters)
-  - [ ] Content (`textarea, markdown string`)
-  - [ ] Tag List (`input, string`) shows a comma-separated list of tags.
-  - [ ] Image URL (`input, URL`)
-- [ ] Under the Description is a "Preview" button that replaces the text area with a rendered markdown string and changes the title to "Close Preview".
-- [ ] When the preview is closed, the cursor must be in the same position as before opening the preview.
-- [ ] Under the image input is an image preview.
-- [ ] User can click on the "Save" button that displays an error ui if one of the fields is not specified or valid.
-
-## 👾 Requirements: Assignment 2.3
-
-### BACKEND / CLIENT
-
-- [ ] Data is loaded from the database backend
-- [ ] Data filtering is done server side and only filtered data is sent to client
-- [ ] Each visit of the page increases the post "views" count by one
-- [ ] User can "like" the post on the detail screen, NOT on the list screen (hint, create the `/api/likes/route.ts` route and implement the needed handlers)
-- [ ] Liking the post increases the like count by one
-- [ ] User can like the post only once (use IP)
-- [ ] User can unlike the post, decreasing the like post by one
-
-### BACKEND / ADMIN / AUTHORISATION
-
-> For these two requirements we do not have End 2 End tests and will be checked manually.
-
-- [ ] The password is checked on server in the `/api/auth` route
-- [ ] The POST method is used for login
-- [ ] The DELETE method is used for logout
-- [ ] The admin home page checks for the presence of JWT token and verifies it, if the token does not exist or is invalid, displays the login control.
-
-### BACKEND / ADMIN / LIST SCREEN
-
-- [ ] Logged in user can activate / deactivate a post clicking on the activate button, automatically saving changes
-
-### BACKEND / ADMIN / UPDATE SCREEN
-
-- [ ] Logged in user can save changes to database, if the form is validated
-
-### BACKEND / ADMIN / CREATE SCREEN
-
-- [ ] Logged in user can create a new post to the database, if the form is validated
-
-## Prerequisites
-
-First, make sure that "pnpm" and "turbo" is installed in your computer. If not, please follow installation instructions for pnpm. If turbo is not installed, please install it using pnpm with the following command:
-
-Then, run the following command to install turborepo.
-
-```
-pnpm add -g turbo
-```
-
-## Installing the project
-
-Once the pnpm is installed, in the root of the project install the packages
-
-```
-pnpm i
-```
-
-To run end to end tests you need to install headless browsers. Please run the following command in the `tests/playwright-web` directory
-
-```
-pnpx playwright install
-```
-
-## Environment
-
-In all packages `apps/admin` and `packages/db` find `.env.example` files and copy them to `.env`. Set your environment variables accordingly!
-
-## Running the project
-
-To run the project, run the following command in the root directory of your project:
-
-```
-turbo dev
-```
-
-This will run:
-
-- Client application at [http://localhost:3001](http://localhost:3001)
-- Admin application at [http://localhost:3002](http://localhost:3002)
-
-## Running tests
-
-To run the tests please run, you have two options.
-
-### Running Tests in Console
-
-If you only wish to visualise the test results in console, please run the following command in the root of your project for the first part of the second assignment (i.e. Assignment 2.1):
-
-```
-turbo test-1
-```
-
-This launches the turbo console UI similar to below, where you can swap between different projects:
-
-![Turbo UI](https://skillpies.s3.ap-southeast-2.amazonaws.com/courses/full-stack-development/sections/assignment-2-1-blog-client-in-advanced-react/Screenshot%202025-02-05%20at%2014.30.45.png)
-
-> ⚠️⚠️ Make sure that ALL tests pass!
-
-If you want to run the tests for second part (i.e. Assignment 2.2) or third part (i.e. Assignment 2.3), run these commands:
-
-```
-turbo test-2 // or
-turbo test-3
-```
-
-If you want to run all tests, please run
-
-```
-turbo all:test
-```
-
-### Running Tests in UIs
-
-The packaged tests framework also have the possibility of visually represent your tests for nicer view of test results. To see the UIs, run this command instead of `turbo test-1`:
-
-```
-turbo dev:test-1
-```
-
-This will launch the End to End testing framework Playwright's test UI similar to below, please use the Play buttons to run individual tests:
-
-![Playwright UI](https://skillpies.s3.ap-southeast-2.amazonaws.com/courses/full-stack-development/sections/assignment-2-1-blog-client-in-advanced-react/Screenshot%202025-02-05%20at%2014.40.35.png)
-
-It also launches the unit and integration test framework Vitest's UI, similar to below. Here, you can also use the play buttons to execute individual tests!
-
-![Vitest UI](https://skillpies.s3.ap-southeast-2.amazonaws.com/courses/full-stack-development/sections/assignment-2-1-blog-client-in-advanced-react/Screenshot%202025-02-05%20at%2014.46.31.png)
-
-## Project structure
-
-The project is monorepo with the following packages split into three categories:
-
-**Applications**
-
-Contains the following web applications:
-
-- **apps/admin** - Admin Website
-- **apps/web** - Client website
-
-**Packages**
-
-Contains the following packages with shared code and configurations:
-
-- **packages/ui** - Library of UI elements shared between admin and client
-- **packages/utils** - Library of utility functions shared between other projects
-- **packages/db** - Library handling the database connection
-- **packages/eslint-config**, **packages/tailwind-config** and **packages/typescript-config** contain configuration files for build pipelines for this project
-
-**Tests**
-
-Contains the following test applications:
-
-- **tests/playwright-admin** - End to End tests for the admin application
-- **tests/playwright-web** - End to End tests for the client application
-- **tests/storybook** - Configured storybook instance for development and testing of React components in isolation
-
-## Application Structure
-
-The client application comes with pre-defined router (only one route is missing for your learning).
-The client application also comes with pre defined structure of components and utilities for you to complete.
-Tha admin application is much more bare with most functionality AND structure needed to be completed by you.
-
+The requirement checkboxes below are retained for manual review. A passing automated suite does not verify every manual requirement.
 
 ## Features added for this project
 
 ### Blog pagination
 
-The public blog shows three posts per page, with numbered page links and Previous/Next navigation. The current page is stored in the URL. Pagination also works with the existing search, category, tag, and history views. When a filter has only one page of results, the page links are hidden.
+The public blog displays three posts per page by default.
+
+- Numbered links and Previous/Next links navigate between pages.
+- The current page is stored in the URL.
+- Existing query parameters are preserved during navigation.
+- Pagination is available in the home, search, category, tag, and history views.
+- Pagination controls are hidden when there is only one page.
+- The total post count represents all matching posts, not just the current page.
 
 ### Rich-text post editor
 
-The admin post form offers a visual editor and a Markdown editor. Formatting made in the visual editor is saved as Markdown, so a post can be reopened for editing and displayed on the public blog. The existing Markdown field remains available.
+The admin form offers a visual editor built with Tiptap alongside the Markdown editor.
+
+The visual editor supports:
+
+- Bold and italic text
+- Heading levels 2 and 3
+- Bullet and numbered lists
+- Quotes and code blocks
+- Undo and redo
+
+Content is saved as Markdown. A saved post can be reopened for editing and displayed on the public blog.
+
+The rich-text Playwright test checks that bold formatting survives saving, reopening, and viewing the post on the public website.
 
 ### Discussion Corner
 
-Readers can comment on a post and reply to other comments. Replies appear beneath their parent comment and can be collapsed. Comments are stored in SQLite through Prisma. The server checks the name, comment length, active post, and whether a reply belongs to the same post. Display names are entered by readers; they are not verified accounts.
+Readers can add comments and reply to other comments.
 
-The comment model uses a parent-comment relationship. This allows a comment without a parent to start a discussion and a comment with a parent to become a reply.
+- Comments and replies are stored in SQLite through Prisma.
+- Each reply references its parent comment.
+- Replies can be collapsed and expanded.
+- Initial avatars are generated from readers' display names.
+- The form shows the comment being replied to.
+- Readers can cancel a reply.
+- The interface displays character counts, save feedback, and errors.
+- A failed submission keeps the reader's draft.
 
-## Running the added Playwright tests
+The server validates the display name, comment length, post availability, and parent comment. A reply must belong to the same post as its parent.
 
-Start the apps from the project root:
+Comments are displayed as plain text. Display names are reader-entered and are not verified accounts.
+
+The discussion test checks comment creation, replies, persistence after refreshing, and collapsing or expanding a thread.
+
+### Responsive navigation
+
+The layout adjusts to the available browser width.
+
+- Large windows display a full sidebar beside the content.
+- Windows from 640px wide display a smaller sidebar beside the content.
+- Narrower windows display a collapsible Browse topics menu.
+
+The navigation is rendered once. This avoids duplicate links in the page and keeps the original Playwright selectors working.
+
+## Prerequisites
+
+Use the versions that passed the local test run:
+
+- Node.js 22.23.2
+- pnpm 10.2.0
+
+The root package.json specifies pnpm 10.2.0.
+
+If Node.js 22.23.2 is already installed through NVM for Windows, select it with:
+
+```powershell
+nvm use 22.23.2
+node --version
+```
+
+During troubleshooting, an older test stalled during discovery under Node.js 24.13.0. Switching to Node.js 22.23.2 resolved that observed discovery problem.
+
+Turbo is included in the project dependencies. A separate global Turbo installation is not required for the commands below.
+
+## Environment setup
+
+Create the following local files from the supplied examples if they do not already exist:
+
+| Example file | Local file |
+| --- | --- |
+| packages/db/.env.example | packages/db/.env |
+| apps/admin/.env.example | apps/admin/.env.local |
+
+The database environment uses:
+
+```dotenv
+DATABASE_URL="file:./dev.db"
+```
+
+The admin application requires PASSWORD and JWT_SECRET.
+
+The supplied authentication tests use password `123`. This is a local test value. Use appropriate secrets for a deployed environment and do not commit local environment files.
+
+## Installing the project
+
+Run from the repository root:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm --filter @repo/db db:push
+pnpm --filter @repo/db build
+```
+
+The database command creates or updates tables from the Prisma schema. It does not populate the starter posts.
+
+Install the browser used by the configured Playwright projects:
+
+```powershell
+cd tests\playwright
+pnpm exec playwright install chromium
+```
+
+## Running the applications
+
+From the repository root:
 
 ```powershell
 pnpm turbo dev --ui=tui
 ```
 
-In another terminal, go to `tests/playwright` and run an individual test:
+The applications run at:
+
+- Public blog: http://localhost:3001
+- Admin dashboard: http://localhost:3002
+
+Keep this terminal running while using the development applications.
+
+## Building for production
+
+Stop running development servers before building, particularly on Windows where Prisma's engine file can remain locked by a running process.
+
+From the repository root:
+
+```powershell
+pnpm build
+```
+
+Wait for the final successful task summary and for the terminal prompt to return. Next.js printing "Compiled successfully" is an intermediate step, not the end of the build.
+
+If the Node.js version has changed or a stale cached build needs to be ruled out, rebuild without using Turbo's cache:
+
+```powershell
+pnpm exec turbo build --force
+```
+
+## Running the complete Playwright suite
+
+### Protect existing local data
+
+Some original tests call seed(), which deletes existing posts and likes and recreates the starter data. Deleting posts also removes their comments.
+
+Back up the database before running the suite if it contains posts or discussions you want to keep.
+
+With the applications stopped, run this from the repository root to copy the current SQLite database to a timestamped file in the Windows temporary folder:
+
+```powershell
+$backupPath = Join-Path $env:TEMP ("blog-backup-" + (Get-Date -Format "yyyyMMdd-HHmmss") + ".db")
+Copy-Item .\packages\db\prisma\dev.db $backupPath -ErrorAction Stop
+Write-Output "Database backup: $backupPath"
+```
+
+Keep the printed path. Do not proceed if the backup fails and you need to preserve the existing data.
+
+### Run against production builds
+
+First, build the applications from the repository root:
+
+```powershell
+pnpm build
+```
+
+After the build finishes successfully:
+
+```powershell
+cd tests\playwright
+$env:CI = "true"
+pnpm exec playwright test --reporter=list --max-failures=1 --retries=0
+```
+
+These commands are for Windows PowerShell.
+
+With CI=true, the Playwright configuration starts the production web and admin applications and runs the authentication setup dependencies. Do not start turbo dev alongside this run.
+
+The command stops after the first failure and disables retries, making failures easier to investigate.
+
+After testing, remove the temporary CI setting before returning to normal development:
+
+```powershell
+Remove-Item Env:CI -ErrorAction SilentlyContinue
+```
+
+### List tests without running them
+
+From tests/playwright:
+
+```powershell
+pnpm exec playwright test --list
+```
+
+This lists the tests without executing their database-reset hooks.
+
+### Run an individual added test
+
+With production builds available and CI=true, run one of these commands from tests/playwright:
 
 ```powershell
 pnpm exec playwright test tests/web/pagination.spec.ts --project=web-chromium --reporter=list
+```
+
+```powershell
 pnpm exec playwright test tests/admin/rich-text-editor.spec.ts --project=admin-chromium --reporter=list
+```
+
+```powershell
 pnpm exec playwright test tests/web/discussion.spec.ts --project=web-chromium --reporter=list
 ```
 
-The rich-text test creates a post, and the discussion test creates a comment and reply in the local database.
+The rich-text test creates a post. The discussion test creates a comment and reply. These focused tests leave their created records in the local database; subsequent seed-based tests can remove them.
 
-## Verification status
+### Playwright UI
 
-The focused Playwright tests for pagination, rich-text editing, and Discussion Corner have passed locally. A production build also completed successfully. The complete original Playwright suite has **not yet been verified**: test discovery stalled while loading an older admin test. These focused results should not be taken as a pass for the full suite.
+For interactive development, start the development applications separately.
+
+In the test terminal, remove CI mode and start the Playwright UI:
+
+```powershell
+Remove-Item Env:CI -ErrorAction SilentlyContinue
+pnpm exec playwright test --ui
+```
+
+## Project structure
+
+### Applications
+
+- apps/web — Public blog website
+- apps/admin — Admin dashboard
+
+### Shared packages
+
+- packages/db — Prisma schema, database client, starter data, and seed function
+- packages/env — Environment variable validation
+- packages/ui — Shared UI styles and components
+- packages/utils — Shared utility functions
+- packages/eslint-config — Shared lint configuration
+- packages/tailwind-config — Shared styling configuration
+- packages/typescript-config — Shared TypeScript configuration
+
+### Tests
+
+- tests/playwright/tests/admin — Admin end-to-end tests
+- tests/playwright/tests/web — Public blog end-to-end tests
+- tests/playwright/tests/auth.setup.ts — Authentication setup
+- tests/playwright/playwright.config.ts — Playwright configuration
+- tests/storybook — Storybook configuration and component development
+
+## Success criteria
+
+- All required tests must pass.
+- The student must be able to explain the code in the codebase.
+
+## Requirements — Assignment 2.1: Client
+
+### Home screen
+
+- [ ] Show only active posts.
+- [ ] Show categories linking to posts in the selected category.
+- [ ] Show tags linking to posts with the selected tag.
+- [ ] Show history links by month and year.
+- [ ] Generate tags and history items from active posts.
+- [ ] Display each post's title linked to its detail page, description, date, image, tags, likes, and views.
+- [ ] Support light and dark themes through a button, storing the theme in the data-theme attribute on the HTML element.
+- [ ] Search post titles and descriptions and navigate to the search page.
+
+### Detail screen
+
+- [ ] Display the list-item information, replacing the short description with formatted full content.
+- [ ] Convert Markdown content into HTML.
+
+### Category screen
+
+- [ ] Display posts belonging to the category in the URL.
+- [ ] Display "0 Posts" when no posts match.
+
+### History screen
+
+- [ ] Display posts from the year and month in the URL.
+- [ ] Display "0 Posts" when no posts match.
+
+### Tag screen
+
+- [ ] Display posts matching the tag in the URL.
+- [ ] Display "0 Posts" when no posts match.
+
+### Search screen
+
+- [ ] Display results based on the q query parameter.
+- [ ] Display "0 Posts" when no posts match.
+
+## Requirements — Assignment 2.2: Admin
+
+### Admin home screen
+
+- [ ] Display the login screen when logged out.
+- [ ] Display the post list when logged in.
+- [ ] Provide a logout button.
+- [ ] Log the user out when the button is clicked.
+- [ ] Authenticate using the assignment password.
+- [ ] Remember the session using an HTTP-only cookie named auth_token.
+
+### Admin list screen
+
+- [ ] Show active and inactive posts.
+- [ ] Restrict access to logged-in users.
+- [ ] Filter by title or content.
+- [ ] Filter by tags.
+- [ ] Filter by date.
+- [ ] Filter by visibility.
+- [ ] Support combining filters.
+- [ ] Sort by title or creation date in ascending and descending order.
+- [ ] Display each post's image and title.
+- [ ] Display category, tags, and active status.
+- [ ] Provide an active-status button with feedback.
+- [ ] Open the update screen when a post title is clicked.
+- [ ] Provide a Create Post control.
+- [ ] Open the create screen from that control.
+
+### Admin create and update screens
+
+Both screens use the same form. The update screen preloads the existing post.
+
+- [ ] Restrict access to logged-in users.
+- [ ] Validate the title.
+- [ ] Validate the description, with a maximum of 200 characters.
+- [ ] Validate Markdown content.
+- [ ] Validate the comma-separated tag list.
+- [ ] Validate the image URL.
+- [ ] Provide Preview and Close Preview controls for Markdown.
+- [ ] Restore the cursor position when closing the preview.
+- [ ] Display an image preview below the image URL field.
+- [ ] Display validation errors when Save is clicked with invalid or missing values.
+
+## Requirements — Assignment 2.3: Backend
+
+### Public blog
+
+- [ ] Load data from the database.
+- [ ] Filter data on the server and send only filtered post results to the client.
+- [ ] Increase the view count when a post detail page is visited.
+- [ ] Allow liking from the detail page rather than the list.
+- [ ] Increase the like count when a post is liked.
+- [ ] Allow one like per IP address per post.
+- [ ] Allow unliking and decrease the count.
+
+### Admin authentication
+
+These requirements also need manual review.
+
+- [ ] Check the password on the server through /api/auth.
+- [ ] Use POST for login.
+- [ ] Use DELETE for logout.
+- [ ] Verify the JWT before displaying protected admin content.
+- [ ] Display the login screen when the token is missing or invalid.
+
+### Admin post management
+
+- [ ] Save active/inactive status changes to the database.
+- [ ] Allow an authenticated user to update a validated post.
+- [ ] Allow an authenticated user to create a validated post.
+
+## Troubleshooting
+
+### Playwright is not recognised
+
+Run pnpm exec playwright commands from tests/playwright, where the dependency is installed.
+
+### Prisma reports EPERM on Windows
+
+Stop the development servers and Prisma Studio before generating Prisma Client or building. A running process may hold the Prisma engine file open.
+
+### Production build is missing
+
+Run pnpm build and wait for it to finish before starting production servers.
+
+### Test discovery hangs
+
+Check node --version. Node.js 22.23.2 was used for the successful 46-test run.
+
+### Hydration warnings containing bis_skin_checked
+
+The observed warning disappeared when using Chrome Incognito without extensions. Test without browser extensions before changing application code.
+
+## Remaining verification
+
+The recorded passing result is local. GitHub Actions execution, deployment, and any separate unit-test or lint results must be verified independently before claiming they pass.
