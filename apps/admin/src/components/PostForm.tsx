@@ -4,6 +4,7 @@ import type { Post } from "@repo/db/data";
 import { useRef, useState, useTransition } from "react";
 
 import { createPost, updatePost } from "../app/actions";
+import { RichTextEditor } from "./RichTextEditor";
 
 type PostFormProps = {
   post?: Post;
@@ -17,15 +18,8 @@ type FormErrors = {
   tags?: string;
 };
 
-// ---------------------------------------------------------
-// SMALL MARKDOWN PREVIEW
-// ---------------------------------------------------------
-//
-// Assignment 2 tests use simple Markdown such as:
-//
-// **some bold text**
-//
-// This converts it into HTML for the preview.
+// Preserve the existing basic Markdown preview.
+// Escape HTML before inserting the supported formatting.
 function renderMarkdown(markdown: string) {
   return markdown
     .replace(/&/g, "&amp;")
@@ -36,185 +30,56 @@ function renderMarkdown(markdown: string) {
 }
 
 export function PostForm({ post }: PostFormProps) {
-  // If post exists:
-  // UPDATE screen.
-  //
-  // If post does not exist:
-  // CREATE screen.
-
+  // Existing posts populate the update form.
+  // Without a post, the same component creates a new article.
   const [title, setTitle] = useState(post?.title ?? "");
-  const [category, setCategory] = useState(
-    post?.category ?? "",
-  );
-
+  const [category, setCategory] = useState(post?.category ?? "");
   const [description, setDescription] = useState(
     post?.description ?? "",
   );
-
-  const [content, setContent] = useState(
-    post?.content ?? "",
-  );
-
+  const [content, setContent] = useState(post?.content ?? "");
   const [tags, setTags] = useState(post?.tags ?? "");
+  const [imageUrl, setImageUrl] = useState(post?.imageUrl ?? "");
 
-  const [imageUrl, setImageUrl] = useState(
-    post?.imageUrl ?? "",
-  );
-
-  // Individual validation messages.
   const [errors, setErrors] = useState<FormErrors>({});
-
-  // Assignment 2 validation message.
-  const [showSaveError, setShowSaveError] =
-    useState(false);
-
-  // Assignment 2.3 success message.
+  const [showSaveError, setShowSaveError] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  // Used while database save is running.
+  const [saveError, setSaveError] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  // Controls Markdown preview.
-  const [showPreview, setShowPreview] = useState(false);
+  // Both editor modes share the same Markdown content state.
+  // Markdown remains the default for the existing textarea tests.
+  const [editorMode, setEditorMode] = useState<
+    "markdown" | "visual"
+  >("markdown");
 
-  // Reference to Content textarea.
+  const [showPreview, setShowPreview] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
-  // Store cursor position before preview opens.
+  // Preserve the Markdown selection when opening its preview
+  // or temporarily switching to the visual editor.
   const cursorPosition = useRef({
     start: 0,
     end: 0,
   });
 
-  // ---------------------------------------------------------
-  // VALIDATION
-  // ---------------------------------------------------------
+  function rememberMarkdownSelection() {
+    const textarea = contentRef.current;
 
-  function validateForm() {
-    const newErrors: FormErrors = {};
-
-    // TITLE
-    if (!title.trim()) {
-      newErrors.title = "Title is required";
-    }
-
-    // DESCRIPTION
-    if (!description.trim()) {
-      newErrors.description = "Description is required";
-    } else if (description.length > 200) {
-      newErrors.description =
-        "Description is too long. Maximum is 200 characters";
-    }
-
-    // CONTENT
-    if (!content.trim()) {
-      newErrors.content = "Content is required";
-    }
-
-    // IMAGE URL
-    if (!imageUrl.trim()) {
-      newErrors.imageUrl = "Image URL is required";
-    } else {
-      try {
-        // Throws if the URL is invalid.
-        new URL(imageUrl);
-      } catch {
-        newErrors.imageUrl = "This is not a valid URL";
-      }
-    }
-
-    // TAGS
-    if (!tags.trim()) {
-      newErrors.tags = "At least one tag is required";
-    }
-
-    setErrors(newErrors);
-
-    const hasErrors = Object.keys(newErrors).length > 0;
-
-    setShowSaveError(hasErrors);
-
-    return !hasErrors;
-  }
-
-  // ---------------------------------------------------------
-  // ASSIGNMENT 2.3 - SAVE TO DATABASE
-  // ---------------------------------------------------------
-
-  function handleSave() {
-    // Keep Assignment 2 validation.
-    const valid = validateForm();
-
-    if (!valid) {
-      setSaveSuccess(false);
-      return;
-    }
-
-    startTransition(async () => {
-      // Data shared by create and update.
-      const postData = {
-        title: title.trim(),
-        category: category.trim(),
-        description: description.trim(),
-        content,
-        imageUrl: imageUrl.trim(),
-        tags: tags.trim(),
+    if (textarea) {
+      cursorPosition.current = {
+        start: textarea.selectionStart,
+        end: textarea.selectionEnd,
       };
-
-      if (post) {
-        // -----------------------------------------------
-        // UPDATE EXISTING POST
-        // -----------------------------------------------
-
-        await updatePost(post.id, postData);
-      } else {
-        // -----------------------------------------------
-        // CREATE NEW POST
-        // -----------------------------------------------
-
-        await createPost(postData);
-      }
-
-      // Official Assignment 2.3 test expects
-      // this exact success text.
-      setSaveSuccess(true);
-
-      // Remove the general error after successful save.
-      setShowSaveError(false);
-    });
+    }
   }
 
-  // ---------------------------------------------------------
-  // MARKDOWN PREVIEW
-  // ---------------------------------------------------------
-
-  function togglePreview() {
-    if (!showPreview) {
-      // Remember cursor position before hiding textarea.
-      const textarea = contentRef.current;
-
-      if (textarea) {
-        cursorPosition.current = {
-          start: textarea.selectionStart,
-          end: textarea.selectionEnd,
-        };
-      }
-
-      setShowPreview(true);
-      return;
-    }
-
-    // Close preview.
-    setShowPreview(false);
-
-    // Wait for textarea to appear again,
-    // then restore cursor position.
+  function restoreMarkdownSelection() {
     requestAnimationFrame(() => {
       const textarea = contentRef.current;
 
       if (textarea) {
         textarea.focus();
-
         textarea.setSelectionRange(
           cursorPosition.current.start,
           cursorPosition.current.end,
@@ -223,12 +88,127 @@ export function PostForm({ post }: PostFormProps) {
     });
   }
 
+  function switchEditorMode(mode: "markdown" | "visual") {
+    if (mode === editorMode) {
+      return;
+    }
+
+    if (editorMode === "markdown") {
+      rememberMarkdownSelection();
+    }
+
+    setShowPreview(false);
+    setEditorMode(mode);
+
+    if (mode === "markdown") {
+      restoreMarkdownSelection();
+    }
+  }
+
+  function togglePreview() {
+    if (!showPreview) {
+      rememberMarkdownSelection();
+      setShowPreview(true);
+      return;
+    }
+
+    setShowPreview(false);
+    restoreMarkdownSelection();
+  }
+
+  // Called by either editor whenever the post body changes.
+  function handleContentChange(markdown: string) {
+    setContent(markdown);
+    setSaveSuccess(false);
+    setSaveError("");
+  }
+
+  function validateForm() {
+    const newErrors: FormErrors = {};
+
+    if (!title.trim()) {
+      newErrors.title = "Title is required";
+    }
+
+    if (!description.trim()) {
+      newErrors.description = "Description is required";
+    } else if (description.length > 200) {
+      newErrors.description =
+        "Description is too long. Maximum is 200 characters";
+    }
+
+    if (!content.trim()) {
+      newErrors.content = "Content is required";
+    }
+
+    if (!imageUrl.trim()) {
+      newErrors.imageUrl = "Image URL is required";
+    } else {
+      try {
+        new URL(imageUrl);
+      } catch {
+        newErrors.imageUrl = "This is not a valid URL";
+      }
+    }
+
+    if (!tags.trim()) {
+      newErrors.tags = "At least one tag is required";
+    }
+
+    setErrors(newErrors);
+
+    const hasErrors = Object.keys(newErrors).length > 0;
+    setShowSaveError(hasErrors);
+
+    return !hasErrors;
+  }
+
+  function handleSave() {
+    setSaveSuccess(false);
+    setSaveError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        // The visual editor exports Markdown, so both modes
+        // save through the existing database actions.
+        const postData = {
+          title: title.trim(),
+          category: category.trim(),
+          description: description.trim(),
+          content,
+          imageUrl: imageUrl.trim(),
+          tags: tags.trim(),
+        };
+
+        if (post) {
+          await updatePost(post.id, postData);
+        } else {
+          await createPost(postData);
+        }
+
+        setSaveSuccess(true);
+        setShowSaveError(false);
+      } catch {
+        // Keep the user's draft available if saving fails.
+        setSaveError(
+          "Unable to save the post. Please try again.",
+        );
+      }
+    });
+  }
+
+  const modeButtonClass =
+    "rounded-md px-3 py-2 text-sm font-medium transition " +
+    "focus-visible:outline focus-visible:outline-2 " +
+    "focus-visible:outline-blue-600";
+
   return (
     <div className="mx-auto max-w-4xl">
-      {/* ---------------------------------------------------
-          PAGE HEADING
-      --------------------------------------------------- */}
-
+      {/* Page heading */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
           {post ? "Update Post" : "Create Post"}
@@ -242,10 +222,7 @@ export function PostForm({ post }: PostFormProps) {
       </div>
 
       <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        {/* ---------------------------------------------------
-            TITLE
-        --------------------------------------------------- */}
-
+        {/* Title */}
         <div>
           <label
             htmlFor="title"
@@ -271,10 +248,7 @@ export function PostForm({ post }: PostFormProps) {
           )}
         </div>
 
-        {/* ---------------------------------------------------
-            CATEGORY
-        --------------------------------------------------- */}
-
+        {/* Category */}
         <div>
           <label
             htmlFor="category"
@@ -294,10 +268,7 @@ export function PostForm({ post }: PostFormProps) {
           />
         </div>
 
-        {/* ---------------------------------------------------
-            DESCRIPTION
-        --------------------------------------------------- */}
-
+        {/* Short description */}
         <div>
           <label
             htmlFor="description"
@@ -319,7 +290,6 @@ export function PostForm({ post }: PostFormProps) {
 
           <div className="mt-1 flex justify-between text-xs text-gray-400">
             <span>Short description</span>
-
             <span>{description.length}/200</span>
           </div>
 
@@ -330,61 +300,106 @@ export function PostForm({ post }: PostFormProps) {
           )}
         </div>
 
-        {/* ---------------------------------------------------
-            CONTENT + MARKDOWN PREVIEW
-        --------------------------------------------------- */}
-
+        {/* Content editor */}
         <div>
-          <div className="mb-2 flex items-center justify-between">
-            <label
-              htmlFor="content"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Content
-            </label>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            {editorMode === "markdown" ? (
+              <label
+                htmlFor="content"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Content
+              </label>
+            ) : (
+              <span className="text-sm font-medium text-gray-700">
+                Content
+              </span>
+            )}
 
-            <button
-              type="button"
-              onClick={togglePreview}
-              className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            {/* Accessible toggle buttons select the editing mode. */}
+            <div
+              role="group"
+              aria-label="Editor mode"
+              className="flex gap-1 rounded-lg bg-gray-100 p-1"
             >
-              {showPreview ? "Close Preview" : "Preview"}
-            </button>
+              <button
+                type="button"
+                aria-pressed={editorMode === "visual"}
+                onClick={() => switchEditorMode("visual")}
+                className={`${modeButtonClass} ${
+                  editorMode === "visual"
+                    ? "bg-white text-blue-700 shadow-sm"
+                    : "text-gray-600 hover:bg-white"
+                }`}
+              >
+                Visual editor
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={editorMode === "markdown"}
+                onClick={() => switchEditorMode("markdown")}
+                className={`${modeButtonClass} ${
+                  editorMode === "markdown"
+                    ? "bg-white text-blue-700 shadow-sm"
+                    : "text-gray-600 hover:bg-white"
+                }`}
+              >
+                Markdown
+              </button>
+            </div>
           </div>
 
-          {showPreview ? (
-            <div
-              data-test-id="content-preview"
-              className="min-h-48 rounded-lg border border-gray-200 bg-gray-50 p-4 leading-7 text-gray-700"
-              dangerouslySetInnerHTML={{
-                __html: renderMarkdown(content),
-              }}
+          {editorMode === "visual" ? (
+            // Mount with the latest Markdown whenever visual mode opens.
+            // Editing here updates the same content state as the textarea.
+            <RichTextEditor
+              initialContent={content}
+              onChange={handleContentChange}
             />
           ) : (
-            <textarea
-              ref={contentRef}
-              id="content"
-              value={content}
-              onChange={(event) => {
-                setContent(event.target.value);
-                setSaveSuccess(false);
-              }}
-              rows={12}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm"
-            />
+            <>
+              <div className="mb-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={togglePreview}
+                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  {showPreview ? "Close Preview" : "Preview"}
+                </button>
+              </div>
+
+              {showPreview ? (
+                <div
+                  data-test-id="content-preview"
+                  className="min-h-48 rounded-lg border border-gray-200 bg-gray-50 p-4 leading-7 text-gray-700"
+                  dangerouslySetInnerHTML={{
+                    __html: renderMarkdown(content),
+                  }}
+                />
+              ) : (
+                <textarea
+                  ref={contentRef}
+                  id="content"
+                  value={content}
+                  onChange={(event) =>
+                    handleContentChange(event.target.value)
+                  }
+                  rows={12}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 font-mono text-sm"
+                />
+              )}
+            </>
           )}
 
           {errors.content && (
-            <p className="mt-2 text-sm text-red-600">
+            <p role="alert" className="mt-2 text-sm text-red-600">
               {errors.content}
             </p>
           )}
         </div>
 
-        {/* ---------------------------------------------------
-            TAGS
-        --------------------------------------------------- */}
-
+        {/* Tags */}
         <div>
           <label
             htmlFor="tags"
@@ -415,10 +430,7 @@ export function PostForm({ post }: PostFormProps) {
           )}
         </div>
 
-        {/* ---------------------------------------------------
-            IMAGE URL + PREVIEW
-        --------------------------------------------------- */}
-
+        {/* Image URL and preview */}
         <div>
           <label
             htmlFor="image-url"
@@ -443,7 +455,6 @@ export function PostForm({ post }: PostFormProps) {
             </p>
           )}
 
-          {/* Assignment 2 test checks this test-id */}
           {imageUrl && (
             <img
               data-test-id="image-preview"
@@ -454,29 +465,35 @@ export function PostForm({ post }: PostFormProps) {
           )}
         </div>
 
-        {/* ---------------------------------------------------
-            VALIDATION ERROR
-        --------------------------------------------------- */}
-
+        {/* Form validation feedback */}
         {showSaveError && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
             Please fix the errors before saving
           </div>
         )}
 
-        {/* ---------------------------------------------------
-            ASSIGNMENT 2.3 SUCCESS
-        --------------------------------------------------- */}
-
-        {saveSuccess && (
-          <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            Post updated successfully
+        {/* Database save failure */}
+        {saveError && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {saveError}
           </div>
         )}
 
-        {/* ---------------------------------------------------
-            SAVE
-        --------------------------------------------------- */}
+        {/* Preserve the success text used by the original tests. */}
+        {saveSuccess && (
+          <div
+            role="status"
+            className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+          >
+            Post updated successfully
+          </div>
+        )}
 
         <div className="flex justify-end">
           <button
