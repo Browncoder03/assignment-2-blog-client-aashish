@@ -1,20 +1,30 @@
-import { posts } from "@repo/db/data";
+import type { Post } from "@repo/db/data";
 
 import { CategoryList } from "./CategoryList";
 import { HistoryList } from "./HistoryList";
 import { TagList } from "./TagList";
 
-export function LeftMenu({
-  selectedCategory,
-  selectedTag,
-  selectedYear,
-  selectedMonth,
-}: {
+type LeftMenuProps = {
+  posts: Post[];
   selectedCategory?: string;
   selectedTag?: string;
   selectedYear?: string;
   selectedMonth?: string;
-}) {
+};
+
+export function LeftMenu({
+  posts,
+  selectedCategory,
+  selectedTag,
+  selectedYear,
+  selectedMonth,
+}: LeftMenuProps) {
+  // Use the deployed admin URL when one is provided.
+  // Otherwise, use the local admin development address.
+  const adminUrl =
+    process.env.NEXT_PUBLIC_ADMIN_URL ??
+    "http://localhost:3002";
+
   return (
     <div className="flex h-full flex-col">
       {/* Blog title and short description */}
@@ -28,7 +38,7 @@ export function LeftMenu({
         </p>
       </div>
 
-      {/* Main sidebar navigation */}
+      {/* Sidebar navigation generated from database posts */}
       <nav className="space-y-8">
         {/* Categories section */}
         <section>
@@ -39,8 +49,6 @@ export function LeftMenu({
           <ul className="space-y-1">
             <CategoryList
               posts={posts}
-
-              // Pass the selected category so it can be highlighted
               selectedCategory={selectedCategory}
             />
           </ul>
@@ -55,8 +63,6 @@ export function LeftMenu({
           <ul className="space-y-1">
             <HistoryList
               posts={posts}
-
-              // These values tell HistoryList which month/year is selected
               selectedYear={selectedYear}
               selectedMonth={selectedMonth}
             />
@@ -72,21 +78,22 @@ export function LeftMenu({
           <ul className="space-y-1">
             <TagList
               posts={posts}
-
-              // Pass the selected tag so it can be highlighted
               selectedTag={selectedTag}
             />
           </ul>
         </section>
       </nav>
 
-      {/* Admin link */}
+      {/* Link to the separate admin application */}
       <div className="mt-8 border-t border-gray-200 pt-5 dark:border-gray-800">
         <a
-          href="http://localhost:3002"
-          className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+          href={adminUrl}
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         >
-          Admin Dashboard
+          <span>Admin Dashboard</span>
+
+          {/* Small visual detail showing that this opens another app */}
+          <span aria-hidden="true">↗</span>
         </a>
       </div>
     </div>

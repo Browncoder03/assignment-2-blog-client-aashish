@@ -1,8 +1,51 @@
 import type { Post } from "@repo/db/data";
 
 import { BlogListItem } from "./ListItem";
+import { Pagination } from "./Pagination";
 
-export function BlogList({ posts }: { posts: Post[] }) {
+// Normal users see three blog posts on each page.
+// This preserves the original assignment test.
+const DEFAULT_POSTS_PER_PAGE = 3;
+
+type BlogListProps = {
+  posts: Post[];
+
+  // Optional values keep older components and tests compatible.
+  currentPage?: number;
+  postsPerPage?: number;
+};
+
+export function BlogList({
+  posts,
+  currentPage = 1,
+  postsPerPage = DEFAULT_POSTS_PER_PAGE,
+}: BlogListProps) {
+  // Reject invalid page-size values and prevent extremely
+  // large values from being supplied through the URL.
+  const safePostsPerPage =
+    Number.isInteger(postsPerPage) && postsPerPage > 0
+      ? Math.min(postsPerPage, 50)
+      : DEFAULT_POSTS_PER_PAGE;
+
+  // Calculate how many pagination pages are required.
+  const totalPages = Math.ceil(
+    posts.length / safePostsPerPage,
+  );
+
+  // Prevent invalid page numbers such as zero, negative numbers,
+  // or numbers greater than the final available page.
+  const safeCurrentPage = Math.min(
+    Math.max(currentPage, 1),
+    totalPages || 1,
+  );
+
+  // Find the section of the posts array belonging to this page.
+  const startIndex =
+    (safeCurrentPage - 1) * safePostsPerPage;
+
+  const endIndex = startIndex + safePostsPerPage;
+  const visiblePosts = posts.slice(startIndex, endIndex);
+
   return (
     <div className="py-8">
       {/* Blog page heading */}
@@ -20,7 +63,7 @@ export function BlogList({ posts }: { posts: Post[] }) {
           from the world of full-stack development.
         </p>
 
-        {/* Number of available posts */}
+        {/* Show the total number of matching posts */}
         <div className="mt-5">
           <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             {posts.length} Posts
@@ -28,10 +71,10 @@ export function BlogList({ posts }: { posts: Post[] }) {
         </div>
       </div>
 
-      {/* Blog posts */}
-      {posts.length > 0 ? (
+      {/* Display only posts belonging to the selected page */}
+      {visiblePosts.length > 0 ? (
         <div className="space-y-6">
-          {posts.map((post) => (
+          {visiblePosts.map((post) => (
             <BlogListItem
               key={post.id}
               post={post}
@@ -39,7 +82,7 @@ export function BlogList({ posts }: { posts: Post[] }) {
           ))}
         </div>
       ) : (
-        /* Empty search/category state */
+        /* Empty search or category state */
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-900">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             No articles found
@@ -50,6 +93,12 @@ export function BlogList({ posts }: { posts: Post[] }) {
           </p>
         </div>
       )}
+
+      {/* Hide pagination automatically when only one page exists */}
+      <Pagination
+        currentPage={safeCurrentPage}
+        totalPages={totalPages}
+      />
     </div>
   );
 }

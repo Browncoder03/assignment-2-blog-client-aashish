@@ -3,13 +3,15 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "esModuleInterop": true,
-    "module": "es2015",
+    "module": "ESNext",
     "moduleResolution": "Bundler",
-    "target": "es5",
-    "lib": ["es2015", "dom"],
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
     "types": ["node"],
     "typeRoots": ["node_modules/@types", "./support"],
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "noEmit": true
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "playwright-report", "test-results"]
 }
