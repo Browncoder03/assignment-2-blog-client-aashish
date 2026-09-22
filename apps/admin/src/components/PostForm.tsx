@@ -1,7 +1,7 @@
 "use client";
 
 import type { Post } from "@repo/db/data";
-import { useRef, useState, useTransition } from "react";
+import { useLayoutEffect, useRef, useState, useTransition } from "react";
 
 import { createPost, updatePost } from "../app/actions";
 import { RichTextEditor } from "./RichTextEditor";
@@ -74,20 +74,38 @@ export function PostForm({ post }: PostFormProps) {
     }
   }
 
-  function restoreMarkdownSelection() {
-    requestAnimationFrame(() => {
-      const textarea = contentRef.current;
+  // Restore only after returning to the Markdown textarea.
+  const pendingSelectionRestore = useRef(false);
 
-      if (textarea) {
-        textarea.focus();
-        textarea.setSelectionRange(
-          cursorPosition.current.start,
-          cursorPosition.current.end,
-        );
-      }
-    });
+  function restoreMarkdownSelection() {
+    pendingSelectionRestore.current = true;
   }
 
+  // React has mounted the textarea before this effect runs.
+  // Restore its selection before the browser paints.
+  useLayoutEffect(() => {
+    if (
+      !pendingSelectionRestore.current ||
+      showPreview ||
+      editorMode !== "markdown"
+    ) {
+      return;
+    }
+
+    const textarea = contentRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(
+      cursorPosition.current.start,
+      cursorPosition.current.end,
+    );
+
+    pendingSelectionRestore.current = false;
+  }, [showPreview, editorMode]);
   function switchEditorMode(mode: "markdown" | "visual") {
     if (mode === editorMode) {
       return;
