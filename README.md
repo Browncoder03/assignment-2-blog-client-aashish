@@ -258,3 +258,42 @@ Contains the following test applications:
 The client application comes with pre-defined router (only one route is missing for your learning).
 The client application also comes with pre defined structure of components and utilities for you to complete.
 Tha admin application is much more bare with most functionality AND structure needed to be completed by you.
+
+
+## Features added for this project
+
+### Blog pagination
+
+The public blog shows three posts per page, with numbered page links and Previous/Next navigation. The current page is stored in the URL. Pagination also works with the existing search, category, tag, and history views. When a filter has only one page of results, the page links are hidden.
+
+### Rich-text post editor
+
+The admin post form offers a visual editor and a Markdown editor. Formatting made in the visual editor is saved as Markdown, so a post can be reopened for editing and displayed on the public blog. The existing Markdown field remains available.
+
+### Discussion Corner
+
+Readers can comment on a post and reply to other comments. Replies appear beneath their parent comment and can be collapsed. Comments are stored in SQLite through Prisma. The server checks the name, comment length, active post, and whether a reply belongs to the same post. Display names are entered by readers; they are not verified accounts.
+
+The comment model uses a parent-comment relationship. This allows a comment without a parent to start a discussion and a comment with a parent to become a reply.
+
+## Running the added Playwright tests
+
+Start the apps from the project root:
+
+```powershell
+pnpm turbo dev --ui=tui
+```
+
+In another terminal, go to `tests/playwright` and run an individual test:
+
+```powershell
+pnpm exec playwright test tests/web/pagination.spec.ts --project=web-chromium --reporter=list
+pnpm exec playwright test tests/admin/rich-text-editor.spec.ts --project=admin-chromium --reporter=list
+pnpm exec playwright test tests/web/discussion.spec.ts --project=web-chromium --reporter=list
+```
+
+The rich-text test creates a post, and the discussion test creates a comment and reply in the local database.
+
+## Verification status
+
+The focused Playwright tests for pagination, rich-text editing, and Discussion Corner have passed locally. A production build also completed successfully. The complete original Playwright suite has **not yet been verified**: test discovery stalled while loading an older admin test. These focused results should not be taken as a pass for the full suite.
