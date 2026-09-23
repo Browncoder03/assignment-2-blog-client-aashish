@@ -101,6 +101,7 @@ export function PostForm({ post }: PostFormProps) {
     }
 
     textarea.focus({ preventScroll: true });
+
     textarea.setSelectionRange(
       cursorPosition.current.start,
       cursorPosition.current.end,
@@ -108,6 +109,7 @@ export function PostForm({ post }: PostFormProps) {
 
     pendingSelectionRestore.current = false;
   }, [showPreview, editorMode]);
+
   function switchEditorMode(mode: "markdown" | "visual") {
     if (mode === editorMode) {
       return;
@@ -379,8 +381,6 @@ export function PostForm({ post }: PostFormProps) {
           </div>
 
           {editorMode === "visual" ? (
-            // Mount with the latest Markdown whenever visual mode opens.
-            // Editing here updates the same content state as the textarea.
             <RichTextEditor
               initialContent={content}
               onChange={handleContentChange}
@@ -530,11 +530,15 @@ export function PostForm({ post }: PostFormProps) {
                 href={`/post/${encodeURIComponent(savedUrlId)}`}
                 className="rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 hover:bg-gray-50"
               >
-                Open saved post
+                Open post
               </Link>
+
               {(post?.active ?? true) && (
                 <a
-                  href={`${(process.env.NEXT_PUBLIC_WEB_URL || "http://localhost:3001").replace(/\/$/, "")}/post/${encodeURIComponent(savedUrlId)}`}
+                  href={`${(
+                    process.env.NEXT_PUBLIC_WEB_URL ||
+                    "http://localhost:3001"
+                  ).replace(/\/$/, "")}/post/${encodeURIComponent(savedUrlId)}`}
                   className="rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 hover:bg-gray-50"
                 >
                   View on blog
@@ -542,6 +546,7 @@ export function PostForm({ post }: PostFormProps) {
               )}
             </>
           )}
+
           <button
             type="button"
             disabled={isPending}
