@@ -5,27 +5,35 @@
 @config "../../tailwind.config.ts";
 
 :root {
-  --background: white;
-  --foreground: #0a0a0a;
-  --text: theme("colors.gray.900");
-  --textHover: theme("colors.gray.700");
-  --text-secondary: theme("colors.gray.600");
-  --text-secondaryHover: theme("colors.gray.400");
-  --wsu: #a31631;
-  --wsu-light: #853846;
+  --background: #f5f1ff;
+  --foreground: #241438;
+  --text: #241438;
+  --textHover: #7c3aed;
+  --text-secondary: #71617f;
+  --text-secondaryHover: #6d28d9;
+  --wsu: #7c3aed;
+  --wsu-light: #6d28d9;
+
+  --surface: #ffffff;
+  --border: #e3d8f5;
+  --accent: #7c3aed;
+  --heading: #522497;
 }
 
 html[data-theme="dark"] {
-  --background: theme("colors.gray.900");
-  --foreground: #ededed;
-  --text: theme("colors.gray.50");
-  --textHover: theme("colors.gray.300");
-  --text-secondary: theme("colors.gray.400");
-  --text-secondaryHover: theme("colors.gray.500");
-}
+  --background: #140e20;
+  --foreground: #f4edff;
+  --text: #f4edff;
+  --textHover: #c4b5fd;
+  --text-secondary: #b8a9cb;
+  --text-secondaryHover: #ddd6fe;
+  --wsu: #a78bfa;
+  --wsu-light: #c4b5fd;
 
-html {
-  background: var(--background);
+  --surface: #21172f;
+  --border: #44305e;
+  --accent: #c4b5fd;
+  --heading: #ddd0ff;
 }
 
 @theme inline {
@@ -35,4 +43,115 @@ html {
   --color-secondaryHover: var(--text-secondaryHover);
   --color-wsu: var(--wsu);
   --color-wsu-light: var(--wsu-light);
+}
+
+@layer base {
+  html {
+    min-height: 100%;
+    background: var(--background);
+    accent-color: var(--accent);
+  }
+
+  body {
+    min-height: 100vh;
+    color: var(--foreground);
+    background:
+      radial-gradient(
+        ellipse at top left,
+        rgb(139 92 246 / 15%),
+        transparent 55%
+      ),
+      var(--background);
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: var(--heading);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 4vw, 3.4rem);
+  }
+
+  h2 {
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+  }
+
+  a {
+    text-underline-offset: 4px;
+    transition: color 150ms ease;
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="submit"]):not([type="button"]),
+  textarea,
+  select {
+    color: var(--foreground);
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
+  }
+
+  :where(a, button, input, textarea, select):focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    color: #ffffff;
+    background: #7c3aed;
+  }
+}
+
+/* Give existing bordered panels a consistent purple finish. */
+:where(header, aside, article, section, main) .border,
+:where(header, aside, article, section).border {
+  border-color: var(--border);
+}
+
+:where(header, aside, article, section).rounded-lg,
+:where(header, aside, article, section).rounded-xl,
+:where(header, aside, article, section).rounded-2xl {
+  background-color: var(--surface);
+  border-radius: 22px;
+  box-shadow: 0 8px 28px rgb(76 29 149 / 8%);
+}
+
+body h1,
+body h2,
+body h3 {
+  color: var(--heading);
+}
+
+body h1 {
+  font-weight: 800;
+  letter-spacing: -0.04em;
 }
