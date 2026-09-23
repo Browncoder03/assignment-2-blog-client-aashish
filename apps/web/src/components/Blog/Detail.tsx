@@ -2,6 +2,8 @@ import { marked } from "marked";
 import Link from "next/link";
 
 import { LikeButton } from "./LikeButton";
+import { ReadingTools } from "./ReadingTools";
+import { SharePost } from "./SharePost";
 
 // Assignment 2.3 gets the post from Prisma instead
 // of the old static @repo/db/data array.
@@ -20,13 +22,16 @@ type DetailPost = {
   likes: number;
 };
 
-export async function BlogDetail({
-  post,
-}: {
-  post: DetailPost;
-}) {
+export async function BlogDetail({ post }: { post: DetailPost }) {
   // Convert Markdown into HTML.
   const content = await marked.parse(post.content);
+  const wordCount = content
+    .replace(/<[^>]*>/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+  const readingMinutes = Math.max(1, Math.ceil(wordCount / 200));
+  const contentId = `post-content-${post.id}`;
 
   // Split comma-separated tags.
   const postTags = post.tags
@@ -36,20 +41,18 @@ export async function BlogDetail({
 
   // Format date:
   // 18 Apr 2022
-  const formattedDate = post.date.toLocaleDateString(
-    "en-GB",
-    {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    },
-  );
+  const formattedDate = post.date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 
   return (
     <article
       data-test-id={`blog-post-${post.id}`}
       className="mx-auto max-w-4xl py-10"
     >
+      <ReadingTools contentId={contentId} />
       {/* Post image */}
       <img
         src={post.imageUrl}
@@ -60,20 +63,18 @@ export async function BlogDetail({
       {/* Date and category */}
       <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
         <span>{formattedDate}</span>
+        <span className="rounded-full bg-violet-100 px-3 py-1 font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-200">
+          {readingMinutes} min read
+        </span>
 
         <span>•</span>
 
-        <span className="font-medium">
-          {post.category}
-        </span>
+        <span className="font-medium">{post.category}</span>
       </div>
 
       {/* Post title */}
       <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-        <Link
-          href={`/post/${post.urlId}`}
-          className="hover:underline"
-        >
+        <Link href={`/post/${post.urlId}`} className="hover:underline">
           {post.title}
         </Link>
       </h1>
@@ -94,14 +95,14 @@ export async function BlogDetail({
       <div className="mt-5 flex items-center gap-5 border-b border-gray-200 pb-6 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
         <span>{post.views} views</span>
 
-        <LikeButton
-          postId={post.id}
-          initialLikes={post.likes}
-        />
+        <LikeButton postId={post.id} initialLikes={post.likes} />
       </div>
+
+      <SharePost title={post.title} />
 
       {/* Markdown content */}
       <div
+        id={contentId}
         data-test-id="content-markdown"
         className="mt-8 space-y-4 text-base leading-8 text-gray-700 dark:text-gray-300"
         dangerouslySetInnerHTML={{

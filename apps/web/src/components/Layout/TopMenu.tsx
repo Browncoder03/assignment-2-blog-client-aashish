@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import ThemeSwitch from "../Themes/ThemeSwitcher";
@@ -39,12 +40,29 @@ export function TopMenu({ query }: { query?: string }) {
 
   return (
     <header className="sticky top-0 z-20 rounded-xl border border-gray-200 bg-white/95 backdrop-blur transition-colors dark:border-gray-800 dark:bg-gray-900/95">
-      <div className="flex items-center gap-4 px-5 py-4">
+      <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+        <Link
+          href="/"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            className="h-5 w-5"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9" />
+          </svg>
+          Home
+        </Link>
+
         {/* Search form */}
         <form
           action="#"
           method="GET"
-          className="flex-1"
+          className="order-last w-full min-w-0 sm:order-none sm:w-auto sm:flex-1"
           onSubmit={(event) => event.preventDefault()}
         >
           <div className="relative">
@@ -69,7 +87,7 @@ export function TopMenu({ query }: { query?: string }) {
         </form>
 
         {/* Dark/light theme button */}
-        <div className="shrink-0 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 transition-colors dark:border-gray-700 dark:bg-gray-800">
+        <div className="ml-auto shrink-0 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 transition-colors dark:border-gray-700 dark:bg-gray-800">
           <ThemeSwitch />
         </div>
       </div>

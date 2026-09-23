@@ -1,6 +1,7 @@
 "use client";
 
 import type { Post } from "@repo/db/data";
+import Link from "next/link";
 import { useLayoutEffect, useRef, useState, useTransition } from "react";
 
 import { createPost, updatePost } from "../app/actions";
@@ -44,6 +45,7 @@ export function PostForm({ post }: PostFormProps) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showSaveError, setShowSaveError] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savedUrlId, setSavedUrlId] = useState(post?.urlId);
   const [saveError, setSaveError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -205,7 +207,8 @@ export function PostForm({ post }: PostFormProps) {
         if (post) {
           await updatePost(post.id, postData);
         } else {
-          await createPost(postData);
+          const urlId = await createPost(postData);
+          setSavedUrlId(urlId);
         }
 
         setSaveSuccess(true);
@@ -226,6 +229,13 @@ export function PostForm({ post }: PostFormProps) {
 
   return (
     <div className="mx-auto max-w-4xl">
+      <Link
+        href="/"
+        className="mb-6 inline-flex rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+      >
+        Back to posts
+      </Link>
+
       {/* Page heading */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">
@@ -513,7 +523,25 @@ export function PostForm({ post }: PostFormProps) {
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {savedUrlId && (
+            <>
+              <Link
+                href={`/post/${encodeURIComponent(savedUrlId)}`}
+                className="rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Open saved post
+              </Link>
+              {(post?.active ?? true) && (
+                <a
+                  href={`${(process.env.NEXT_PUBLIC_WEB_URL || "http://localhost:3001").replace(/\/$/, "")}/post/${encodeURIComponent(savedUrlId)}`}
+                  className="rounded-lg border border-gray-300 px-4 py-3 font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  View on blog
+                </a>
+              )}
+            </>
+          )}
           <button
             type="button"
             disabled={isPending}

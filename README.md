@@ -175,6 +175,21 @@ pnpm exec turbo build --force
 
 ## Running the complete Playwright suite
 
+With `pnpm dev` running in another terminal, run from the repository root:
+
+```powershell
+pnpm test
+```
+
+This runs every Playwright test, including pagination, rich-text editor, and
+Discussion Corner, without filtering by assignment tags. New `*.spec.ts` files
+under `tests/playwright/tests/admin` or `tests/playwright/tests/web` are included
+automatically. Authentication setup runs first locally and in CI.
+
+Use `pnpm test:ui` for the full suite in Playwright UI, or `pnpm test --list`
+to check discovery without executing tests. These commands cover the end-to-end
+suite; the separate Vitest unit tests keep their existing package commands.
+
 ### Protect existing local data
 
 Some original tests call seed(), which deletes existing posts and likes and recreates the starter data. Deleting posts also removes their comments.
